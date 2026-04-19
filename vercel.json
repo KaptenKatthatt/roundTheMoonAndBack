@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install -g pnpm && pnpm install",
   "buildCommand": "pnpm --filter @rtmab/frontend build",
   "outputDirectory": "apps/frontend/dist",
   "ignoreCommand": "exit 0",
