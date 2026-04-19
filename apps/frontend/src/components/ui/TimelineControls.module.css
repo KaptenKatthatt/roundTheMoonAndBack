@@ -3,7 +3,7 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(90vw, 600px);
+  width: min(95vw, 900px);
   background: rgba(10, 10, 20, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(100, 200, 255, 0.15);
@@ -14,11 +14,18 @@
   font-family: "SF Mono", "JetBrains Mono", monospace;
 }
 
-.top {
+.timeRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
+  flex-wrap: nowrap;
 }
 
 .playBtn {
@@ -115,11 +122,22 @@
   background: rgba(0, 255, 204, 0.08);
 }
 
-.cameraRow {
+.divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.labeledBtn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  margin-bottom: 8px;
+  gap: 2px;
+}
+
+.labeledBtn .rowLabel {
+  margin: 0;
 }
 
 .rowLabel {

@@ -2,7 +2,12 @@ import { useTimeline } from "../../hooks/useTimeline";
 import { LAUNCH_TIME, SPLASHDOWN_TIME } from "@rtmab/shared";
 import styles from "./TimelineControls.module.css";
 
-const SPEEDS = [100, 1000, 10_000, 100_000];
+const SPEEDS = [
+  { value: 100, label: "Slow" },
+  { value: 1_000, label: "Normal" },
+  { value: 10_000, label: "Fast" },
+  { value: 100_000, label: "Superfast" },
+];
 const MISSION_DURATION = SPLASHDOWN_TIME - LAUNCH_TIME;
 
 function formatMissionTime(ms: number): string {
@@ -45,104 +50,30 @@ export function TimelineControls() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.top}>
+      <div className={styles.timeRow}>
+        <span className={styles.time}>T+ {formatMissionTime(elapsed)}</span>
+      </div>
+      <div className={styles.controls}>
         <button className={styles.playBtn} onClick={togglePlaying}>
           {isPlaying ? "⏸" : "▶"}
         </button>
-        <span className={styles.time}>T+ {formatMissionTime(elapsed)}</span>
-        <div className={styles.speeds}>
-          {SPEEDS.map((s) => (
-            <button
-              key={s}
-              className={`${styles.speedBtn} ${s === playbackSpeed ? styles.active : ""}`}
-              onClick={() => setPlaybackSpeed(s)}
-            >
-              {s >= 1000 ? `${s / 1000}k×` : `${s}×`}
-            </button>
-          ))}
-        </div>
-        <button
-          className={styles.iconBtn}
-          onClick={handleRestart}
-          title="Restart mission"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        <div className={styles.divider} />
+        <span className={styles.rowLabel}>SPEED</span>
+        {SPEEDS.map(({ value, label }) => (
+          <button
+            key={value}
+            className={`${styles.speedBtn} ${value === playbackSpeed ? styles.active : ""}`}
+            onClick={() => setPlaybackSpeed(value)}
           >
-            <path
-              d="M2 8a6 6 0 1 0 6-6V0L4 3l4 3V4a4 4 0 1 1-4 4H2z"
-              fill="currentColor"
-            />
-          </svg>
-        </button>
-        <button
-          className={styles.iconBtn}
-          onClick={focusSpacecraft}
-          title="Center on spacecraft"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="8"
-              cy="8"
-              r="3"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <line
-              x1="8"
-              y1="1"
-              x2="8"
-              y2="4.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="8"
-              y1="11.5"
-              x2="8"
-              y2="15"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="1"
-              y1="8"
-              x2="4.5"
-              y2="8"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="11.5"
-              y1="8"
-              x2="15"
-              y2="8"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-      </div>
-      <div className={styles.cameraRow}>
+            {label}
+          </button>
+        ))}
+        <div className={styles.divider} />
         <span className={styles.rowLabel}>VIEW</span>
         <button
           className={styles.iconBtn}
           onClick={() => fireCameraCommand({ type: "view", mode: "side" })}
-          title="Side view (from space towards Earth)"
+          title="Side view"
         >
           <svg
             width="16"
@@ -151,7 +82,6 @@ export function TimelineControls() {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* spacecraft horizontal body */}
             <rect
               x="3"
               y="6.5"
@@ -160,7 +90,6 @@ export function TimelineControls() {
               rx="1"
               fill="currentColor"
             />
-            {/* camera arrow from upper-right */}
             <line
               x1="13"
               y1="2"
@@ -183,7 +112,7 @@ export function TimelineControls() {
         <button
           className={styles.iconBtn}
           onClick={() => fireCameraCommand({ type: "view", mode: "rear" })}
-          title="Rear view (diagonally from behind)"
+          title="Rear view"
         >
           <svg
             width="16"
@@ -192,7 +121,6 @@ export function TimelineControls() {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* spacecraft body (from behind) */}
             <circle
               cx="8"
               cy="7"
@@ -201,7 +129,6 @@ export function TimelineControls() {
               stroke="currentColor"
               strokeWidth="1.5"
             />
-            {/* solar panel wings */}
             <line
               x1="1"
               y1="7"
@@ -220,7 +147,6 @@ export function TimelineControls() {
               strokeWidth="1.5"
               strokeLinecap="round"
             />
-            {/* camera arrow from bottom-right */}
             <line
               x1="14"
               y1="14"
@@ -240,9 +166,8 @@ export function TimelineControls() {
             />
           </svg>
         </button>
-        <span className={styles.rowLabel} style={{ marginLeft: 6 }}>
-          ZOOM
-        </span>
+        <div className={styles.divider} />
+        <span className={styles.rowLabel}>ZOOM</span>
         {([0.05, 0.1, 0.2] as const).map((f) => (
           <button
             key={f}
@@ -253,6 +178,88 @@ export function TimelineControls() {
             {f * 100}%
           </button>
         ))}
+        <div className={styles.divider} />
+        <div className={styles.labeledBtn}>
+          <button
+            className={styles.iconBtn}
+            onClick={handleRestart}
+            title="Restart mission"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 8a6 6 0 1 0 6-6V0L4 3l4 3V4a4 4 0 1 1-4 4H2z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <span className={styles.rowLabel}>RESTART</span>
+        </div>
+        <div className={styles.labeledBtn}>
+          <button
+            className={styles.iconBtn}
+            onClick={focusSpacecraft}
+            title="Center on spacecraft"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="8"
+                cy="8"
+                r="3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <line
+                x1="8"
+                y1="1"
+                x2="8"
+                y2="4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="8"
+                y1="11.5"
+                x2="8"
+                y2="15"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="1"
+                y1="8"
+                x2="4.5"
+                y2="8"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="11.5"
+                y1="8"
+                x2="15"
+                y2="8"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+          <span className={styles.rowLabel}>CENTER</span>
+        </div>
       </div>
       <input
         type="range"
