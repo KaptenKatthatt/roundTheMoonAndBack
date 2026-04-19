@@ -115,6 +115,21 @@
   background: rgba(0, 255, 204, 0.08);
 }
 
+.cameraRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.rowLabel {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
 .slider {
   width: 100%;
   height: 4px;

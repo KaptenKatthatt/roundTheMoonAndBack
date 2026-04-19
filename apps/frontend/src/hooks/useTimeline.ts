@@ -2,12 +2,17 @@ import { create } from "zustand";
 import { LAUNCH_TIME, SPLASHDOWN_TIME } from "@rtmab/shared";
 import type { MissionPhase } from "@rtmab/shared";
 
+export type CameraCmd =
+  | { type: "view"; mode: "side" | "rear" }
+  | { type: "zoom"; fraction: number };
+
 interface TimelineState {
   currentTime: number; // Unix ms
   isPlaying: boolean;
   playbackSpeed: number;
   shouldFocusSpacecraft: boolean;
   cameraResetToken: number;
+  cameraCommand: CameraCmd | null;
   setCurrentTime: (t: number) => void;
   setIsPlaying: (playing: boolean) => void;
   togglePlaying: () => void;
@@ -15,6 +20,8 @@ interface TimelineState {
   focusSpacecraft: () => void;
   clearFocusSpacecraft: () => void;
   resetCamera: () => void;
+  fireCameraCommand: (cmd: CameraCmd) => void;
+  clearCameraCommand: () => void;
   /** Advance time by real-world delta (seconds). Call from useFrame. */
   tick: (deltaSec: number) => void;
 }
@@ -25,6 +32,7 @@ export const useTimeline = create<TimelineState>((set, get) => ({
   playbackSpeed: 100, // 100x realtime by default
   shouldFocusSpacecraft: false,
   cameraResetToken: 0,
+  cameraCommand: null,
 
   setCurrentTime: (t) =>
     set({ currentTime: Math.max(LAUNCH_TIME, Math.min(SPLASHDOWN_TIME, t)) }),
@@ -39,6 +47,9 @@ export const useTimeline = create<TimelineState>((set, get) => ({
   clearFocusSpacecraft: () => set({ shouldFocusSpacecraft: false }),
 
   resetCamera: () => set((s) => ({ cameraResetToken: s.cameraResetToken + 1 })),
+
+  fireCameraCommand: (cmd) => set({ cameraCommand: cmd }),
+  clearCameraCommand: () => set({ cameraCommand: null }),
 
   tick: (deltaSec) => {
     const { isPlaying, playbackSpeed, currentTime } = get();

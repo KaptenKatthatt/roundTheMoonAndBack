@@ -26,6 +26,7 @@ export function TimelineControls() {
     setPlaybackSpeed,
     focusSpacecraft,
     resetCamera,
+    fireCameraCommand,
   } = useTimeline();
 
   const elapsed = currentTime - LAUNCH_TIME;
@@ -135,6 +136,123 @@ export function TimelineControls() {
             />
           </svg>
         </button>
+      </div>
+      <div className={styles.cameraRow}>
+        <span className={styles.rowLabel}>VIEW</span>
+        <button
+          className={styles.iconBtn}
+          onClick={() => fireCameraCommand({ type: "view", mode: "side" })}
+          title="Side view (from space towards Earth)"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* spacecraft horizontal body */}
+            <rect
+              x="3"
+              y="6.5"
+              width="10"
+              height="3"
+              rx="1"
+              fill="currentColor"
+            />
+            {/* camera arrow from upper-right */}
+            <line
+              x1="13"
+              y1="2"
+              x2="10"
+              y2="6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <polyline
+              points="8,3 10,6 13,5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <button
+          className={styles.iconBtn}
+          onClick={() => fireCameraCommand({ type: "view", mode: "rear" })}
+          title="Rear view (diagonally from behind)"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* spacecraft body (from behind) */}
+            <circle
+              cx="8"
+              cy="7"
+              r="2.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            {/* solar panel wings */}
+            <line
+              x1="1"
+              y1="7"
+              x2="5.5"
+              y2="7"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="10.5"
+              y1="7"
+              x2="15"
+              y2="7"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            {/* camera arrow from bottom-right */}
+            <line
+              x1="14"
+              y1="14"
+              x2="10"
+              y2="10"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <polyline
+              points="10,13 10,10 13,10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <span className={styles.rowLabel} style={{ marginLeft: 6 }}>
+          ZOOM
+        </span>
+        {([0.1, 0.3, 0.6] as const).map((f) => (
+          <button
+            key={f}
+            className={styles.speedBtn}
+            onClick={() => fireCameraCommand({ type: "zoom", fraction: f })}
+            title={`Show spacecraft at ${f * 100}% screen coverage`}
+          >
+            {f * 100}%
+          </button>
+        ))}
       </div>
       <input
         type="range"
