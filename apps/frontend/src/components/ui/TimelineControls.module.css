@@ -148,6 +148,29 @@
   flex-shrink: 0;
 }
 
+.linkBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #aaa;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.linkBtn:hover {
+  color: #00ffcc;
+  border-color: rgba(0, 255, 204, 0.5);
+  background: rgba(0, 255, 204, 0.08);
+}
+
 .slider {
   width: 100%;
   height: 4px;
