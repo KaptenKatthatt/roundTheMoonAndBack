@@ -1,5 +1,6 @@
 {
   "buildCommand": "pnpm --filter @rtmab/frontend build",
   "outputDirectory": "apps/frontend/dist",
+  "ignoreCommand": "exit 0",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
