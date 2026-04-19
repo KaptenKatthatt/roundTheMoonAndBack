@@ -5,6 +5,7 @@ import { latLonToVector3, easeInOutCubic } from "../utils/coordinates";
 import * as THREE from "three";
 import { useTimeline } from "../hooks/useTimeline";
 import { useTrajectory } from "../hooks/useTrajectory";
+import { getMoonScenePosition } from "../data/moonOrbit";
 
 // ─── Intro animation constants ────────────────────────────────────────
 const SWEDEN_LAT = 62;
@@ -23,6 +24,9 @@ const kscPos = latLonToVector3(KSC_LAT, KSC_LON, 2.6);
 // At fov=55 and distance ~3.5, Earth (r=1) takes up most of the frame.
 const widePos = new THREE.Vector3(1.5, 2.0, 2.5);
 const wideTarget = new THREE.Vector3(0, 0, 0);
+// Lunar flyby zoom: at 0.776 units from Moon center Moon fills ~70% of screen (fov=55).
+const FLYBY_ENTER_DIST = 2.0; // start Moon zoom when spacecraft within this distance
+const FLYBY_EXIT_DIST = 2.8; // end Moon zoom (hysteresis)
 // ──────────────────────────────────────────────────────────────────────
 
 export function CameraAnimation() {
@@ -32,6 +36,7 @@ export function CameraAnimation() {
     "sweden",
   );
   const controlsRef = useRef<any>(null);
+  const flybyBlendRef = useRef(0);
 
   // Watch for camera reset signal
   const cameraResetToken = useTimeline((s) => s.cameraResetToken);
@@ -39,6 +44,7 @@ export function CameraAnimation() {
   if (cameraResetToken !== prevResetTokenRef.current) {
     prevResetTokenRef.current = cameraResetToken;
     elapsedRef.current = 0;
+    flybyBlendRef.current = 0;
     if (cameraResetToken > 0) {
       // Restart: skip Sweden, jump straight to KSC pull-back
       camera.position.copy(kscPos);
@@ -117,12 +123,28 @@ export function CameraAnimation() {
     // Phase 4: Done — follow spacecraft when playing or handle focus request
     if (controlsRef.current) {
       const scPos = getPositionAt(currentTime);
+      const moonPos = getMoonScenePosition(currentTime);
       const currentTarget = controlsRef.current.target as THREE.Vector3;
+
+      // Update lunar-flyby zoom blend based on spacecraft–Moon distance
+      const moonDist = scPos.distanceTo(moonPos);
+      if (moonDist < FLYBY_ENTER_DIST) {
+        flybyBlendRef.current = Math.min(
+          1,
+          flybyBlendRef.current + delta * 0.5,
+        );
+      } else if (moonDist > FLYBY_EXIT_DIST) {
+        flybyBlendRef.current = Math.max(
+          0,
+          flybyBlendRef.current - delta * 0.5,
+        );
+      }
 
       // Focus on spacecraft: snap camera close to it
       const { shouldFocusSpacecraft, clearFocusSpacecraft } =
         useTimeline.getState();
       if (shouldFocusSpacecraft) {
+        flybyBlendRef.current = 0;
         clearFocusSpacecraft();
         // Place camera 0.25 units away from spacecraft (fills ~20% of screen)
         const offset = new THREE.Vector3(0.1, 0.08, 0.15)
@@ -133,11 +155,34 @@ export function CameraAnimation() {
         return;
       }
 
+      // Normal spacecraft follow (suppressed when flyby is fully active)
       if (isPlaying) {
-        const nextTarget = currentTarget.clone().lerp(scPos, 0.04);
-        const deltaTarget = nextTarget.clone().sub(currentTarget);
-        camera.position.add(deltaTarget);
-        controlsRef.current.target.copy(nextTarget);
+        const followStrength = 1 - flybyBlendRef.current;
+        if (followStrength > 0.01) {
+          const nextTarget = currentTarget
+            .clone()
+            .lerp(scPos, 0.04 * followStrength);
+          const deltaTarget = nextTarget.clone().sub(currentTarget);
+          camera.position.add(deltaTarget);
+          controlsRef.current.target.copy(nextTarget);
+        }
+      }
+
+      // Flyby zoom: reposition camera to Moon-side view when spacecraft is nearby
+      if (flybyBlendRef.current > 0.001) {
+        const moonDir = moonPos.clone().normalize();
+        const sideDir = new THREE.Vector3()
+          .crossVectors(moonDir, new THREE.Vector3(0, 1, 0))
+          .normalize();
+        // Place camera ~0.776 units from Moon center (Moon fills ~70% of screen at fov=55)
+        const flybyCamPos = moonPos
+          .clone()
+          .sub(sideDir.clone().multiplyScalar(0.75))
+          .add(new THREE.Vector3(0, 0.2, 0));
+        const smooth = 1 - Math.exp(-2.0 * delta);
+        camera.position.lerp(flybyCamPos, flybyBlendRef.current * smooth);
+        currentTarget.lerp(moonPos, flybyBlendRef.current * smooth);
+        controlsRef.current.target.copy(currentTarget);
       }
     }
   });

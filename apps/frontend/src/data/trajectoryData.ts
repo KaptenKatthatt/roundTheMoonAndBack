@@ -57,14 +57,16 @@ export const TRAJECTORY: SceneWaypoint[] = [
   { t: LAUNCH_TIME + 259_200_000,        p: [15.00,  2.70,-15.50], vel:  0.85, alt: 350_000 },
   { t: LAUNCH_TIME + 302_400_000,        p: [16.50,  2.50,-17.00], vel:  0.75, alt: 370_000 },
 
-  // ═══ Phase 6: Lunar Flyby (T+4 d to T+5 d) ═══
-  { t: LAUNCH_TIME + 331_200_000,        p: [17.20,  2.30,-18.20], vel:  0.82, alt: 380_000 },
-  { t: LAUNCH_TIME + 345_600_000,        p: [17.50,  2.05,-18.80], vel:  1.50, alt: 384_000 },
-  { t: LAUNCH_TIME + 352_800_000,        p: [18.10,  1.80,-18.50], vel:  2.30, alt: 385_000 },
-  { t: LAUNCH_TIME + 360_000_000,        p: [18.50,  1.50,-17.80], vel:  2.10, alt: 384_500 },
-  { t: LAUNCH_TIME + 367_200_000,        p: [18.20,  1.25,-16.80], vel:  1.80, alt: 383_000 },
-  { t: LAUNCH_TIME + 374_400_000,        p: [17.50,  1.00,-15.50], vel:  1.50, alt: 378_000 },
-  { t: LAUNCH_TIME + 388_800_000,        p: [16.50,  0.60,-13.50], vel:  1.20, alt: 365_000 },
+  // ═══ Phase 6: Lunar Flyby (T+3.8 d to T+4.5 d) ═══
+  // Moon center at flyby ≈ (17.1, 2.0, -18.2). Arc passes ~0.65 units from Moon center.
+  // Right side → far side (behind Moon) → left side = free-return slingshot.
+  { t: LAUNCH_TIME + 331_200_000,        p: [17.00,  2.20,-17.60], vel:  0.82, alt: 380_000 },  // approach
+  { t: LAUNCH_TIME + 342_000_000,        p: [17.48,  2.00,-17.89], vel:  1.50, alt: 384_000 },  // entry (right side)
+  { t: LAUNCH_TIME + 345_600_000,        p: [17.55,  2.05,-18.70], vel:  2.30, alt: 385_000 },  // far side (behind Moon)
+  { t: LAUNCH_TIME + 349_200_000,        p: [16.87,  2.00,-18.45], vel:  2.10, alt: 384_500 },  // exit (left side)
+  { t: LAUNCH_TIME + 360_000_000,        p: [16.20,  1.60,-17.00], vel:  1.80, alt: 383_000 },  // post-flyby
+  { t: LAUNCH_TIME + 374_400_000,        p: [15.30,  1.20,-15.00], vel:  1.50, alt: 378_000 },  // departing
+  { t: LAUNCH_TIME + 388_800_000,        p: [14.50,  0.80,-13.00], vel:  1.20, alt: 365_000 },  // en route home
 
   // ═══ Phase 7: Return Coast (T+5 d to T+9.5 d) ═══
   { t: LAUNCH_TIME + 432_000_000,        p: [14.00,  0.10,-10.00], vel:  1.00, alt: 320_000 },
