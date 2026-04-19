@@ -269,7 +269,7 @@ export function TimelineControls() {
         <div style={{ flex: 1 }} />
         <div className={styles.divider} />
         <a
-          href="https://www.jonasolson.se"
+          href="https://www.jonasolson.se/projects/round-the-moon-and-back"
           target="_blank"
           rel="noopener noreferrer"
           className={styles.linkBtn}
