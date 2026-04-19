@@ -29,7 +29,7 @@ interface TimelineState {
 export const useTimeline = create<TimelineState>((set, get) => ({
   currentTime: LAUNCH_TIME,
   isPlaying: false,
-  playbackSpeed: 100, // 100x realtime by default
+  playbackSpeed: 1_000, // Normal speed by default
   shouldFocusSpacecraft: false,
   cameraResetToken: 0,
   cameraCommand: null,

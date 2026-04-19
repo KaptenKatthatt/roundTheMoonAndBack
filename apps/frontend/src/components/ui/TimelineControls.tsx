@@ -2,6 +2,12 @@ import { useTimeline } from "../../hooks/useTimeline";
 import { LAUNCH_TIME, SPLASHDOWN_TIME } from "@rtmab/shared";
 import styles from "./TimelineControls.module.css";
 
+const ZOOMS = [
+  { fraction: 0.05, label: "5%" },
+  { fraction: 0.1, label: "10%" },
+  { fraction: 0.2, label: "20%" },
+];
+
 const SPEEDS = [
   { value: 100, label: "Slow" },
   { value: 1_000, label: "Normal" },
@@ -168,14 +174,14 @@ export function TimelineControls() {
         </button>
         <div className={styles.divider} />
         <span className={styles.rowLabel}>ZOOM</span>
-        {([0.05, 0.1, 0.2] as const).map((f) => (
+        {ZOOMS.map(({ fraction, label }) => (
           <button
-            key={f}
+            key={fraction}
             className={styles.speedBtn}
-            onClick={() => fireCameraCommand({ type: "zoom", fraction: f })}
-            title={`Show spacecraft at ${f * 100}% screen coverage`}
+            onClick={() => fireCameraCommand({ type: "zoom", fraction })}
+            title={`Show spacecraft at ${label} screen coverage`}
           >
-            {f * 100}%
+            {label}
           </button>
         ))}
         <div className={styles.divider} />
