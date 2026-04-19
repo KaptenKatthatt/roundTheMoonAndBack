@@ -1,18 +1,16 @@
 import { useMemo } from "react"
 import { Line } from "@react-three/drei"
 import { useTrajectory } from "../hooks/useTrajectory"
-import { kmToScene } from "../utils/coordinates"
 
 export function Trajectory() {
-  const { points, loading } = useTrajectory()
+  const { curve, loading } = useTrajectory()
 
   const linePoints = useMemo(() => {
-    if (points.length < 2) return []
-    return points.map((pt) => {
-      const v = kmToScene(pt.p)
-      return [v.x, v.y, v.z] as [number, number, number]
-    })
-  }, [points])
+    // Sample 500 points along the CatmullRom curve for a smooth line
+    return curve.getPoints(500).map(
+      (v) => [v.x, v.y, v.z] as [number, number, number],
+    )
+  }, [curve])
 
   if (loading || linePoints.length < 2) return null
 
@@ -22,17 +20,17 @@ export function Trajectory() {
       <Line
         points={linePoints}
         color="#00ffcc"
-        lineWidth={5}
+        lineWidth={4}
         transparent
-        opacity={0.1}
+        opacity={0.08}
       />
       {/* Core line — bright neon */}
       <Line
         points={linePoints}
         color="#00ffee"
-        lineWidth={2}
+        lineWidth={1.5}
         transparent
-        opacity={0.9}
+        opacity={0.85}
       />
     </group>
   )

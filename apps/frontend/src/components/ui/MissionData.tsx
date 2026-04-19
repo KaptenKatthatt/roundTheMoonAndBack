@@ -1,17 +1,16 @@
 import { useTimeline, getMissionPhase } from "../../hooks/useTimeline"
 import { useTrajectory } from "../../hooks/useTrajectory"
-import { LAUNCH_TIME, SPLASHDOWN_TIME, EARTH_RADIUS_KM } from "@rtmab/shared"
+import { SPLASHDOWN_TIME } from "@rtmab/shared"
 import styles from "./MissionData.module.css"
 
 export function MissionData() {
   const currentTime = useTimeline((s) => s.currentTime)
-  const { getPositionAt, getVelocityAt, loading } = useTrajectory()
+  const { getVelocityAt, getAltitudeAt, loading } = useTrajectory()
 
   if (loading) return null
 
-  const pos = getPositionAt(currentTime)
   const velocity = getVelocityAt(currentTime)
-  const distanceFromEarth = pos.length() * EARTH_RADIUS_KM
+  const distanceFromEarth = getAltitudeAt(currentTime)
   const { label: phaseLabel } = getMissionPhase(currentTime)
 
   const timeRemaining = SPLASHDOWN_TIME - currentTime

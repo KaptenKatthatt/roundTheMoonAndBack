@@ -1,113 +1,125 @@
-import { useRef, useState } from "react"
-import { useFrame, useThree } from "@react-three/fiber"
-import { OrbitControls } from "@react-three/drei"
-import { latLonToVector3, easeInOutCubic } from "../utils/coordinates"
-import * as THREE from "three"
-import { useTimeline } from "../hooks/useTimeline"
-import { useTrajectory } from "../hooks/useTrajectory"
+import { useRef, useState } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import { latLonToVector3, easeInOutCubic } from "../utils/coordinates";
+import * as THREE from "three";
+import { useTimeline } from "../hooks/useTimeline";
+import { useTrajectory } from "../hooks/useTrajectory";
 
-const SWEDEN_LAT = 62
-const SWEDEN_LON = 15
-const KSC_LAT = 28.6 // Kennedy Space Center
-const KSC_LON = -80.6
-const START_RADIUS = 2.2 // Satellite view
-const END_RADIUS = 2.6 // Distance at launch pad
-const WAIT_TIME = 1.0 // seconds to wait before zooming
-const ZOOM_DURATION = 4.0 // seconds
+// ─── Intro animation constants ────────────────────────────────────────
+const SWEDEN_LAT = 62;
+const SWEDEN_LON = 15;
+const KSC_LAT = 28.6;
+const KSC_LON = -80.6;
 
-// Camera start position over Sweden
-const startPos = latLonToVector3(SWEDEN_LAT, SWEDEN_LON, START_RADIUS)
-// Camera end position — Kennedy Space Center
-const endPos = latLonToVector3(KSC_LAT, KSC_LON, END_RADIUS)
-// Point on Earth to look at during the pan
-const centerPos = new THREE.Vector3(0, 0, 0)
+const WAIT_SWEDEN = 1.0; // hold over Sweden (seconds)
+const PAN_TO_KSC = 2.0; // Sweden → KSC
+const PULL_BACK = 3.0; // KSC close-up → epic wide shot
+
+const swedenPos = latLonToVector3(SWEDEN_LAT, SWEDEN_LON, 2.2);
+const kscPos = latLonToVector3(KSC_LAT, KSC_LON, 2.6);
+
+// Pull-back: just far enough that the whole Earth fills the screen.
+// At fov=55 and distance ~3.5, Earth (r=1) takes up most of the frame.
+const widePos = new THREE.Vector3(1.5, 2.0, 2.5);
+const wideTarget = new THREE.Vector3(0, 0, 0);
+// ──────────────────────────────────────────────────────────────────────
 
 export function CameraAnimation() {
-  const { camera } = useThree()
-  const waitRef = useRef(0)
-  const progressRef = useRef(0)
-  const [animationDone, setAnimationDone] = useState(false)
-  const controlsRef = useRef<any>(null)
+  const { camera } = useThree();
+  const elapsedRef = useRef(0);
+  const [phase, setPhase] = useState<"sweden" | "pan" | "pullback" | "done">(
+    "sweden",
+  );
+  const controlsRef = useRef<any>(null);
 
   // Follow logic
-  const isPlaying = useTimeline((s) => s.isPlaying)
-  const currentTime = useTimeline((s) => s.currentTime)
-  const { getPositionAt } = useTrajectory()
-  const lastTarget = useRef(new THREE.Vector3(0, 0, 0))
-  const [hasStartedFollowing, setHasStartedFollowing] = useState(false)
+  const isPlaying = useTimeline((s) => s.isPlaying);
+  const currentTime = useTimeline((s) => s.currentTime);
+  const { getPositionAt } = useTrajectory();
 
-  // Ensure camera starts at correct exact position
+  // Smoothed lookAt target for the controls
+  const targetRef = useRef(new THREE.Vector3(0, 0, 0));
+
+  // Set camera to Sweden on first frame
   useFrame(() => {
-    if (waitRef.current === 0 && !animationDone) {
-      camera.position.copy(startPos)
-      camera.lookAt(centerPos)
+    if (elapsedRef.current === 0 && phase === "sweden") {
+      camera.position.copy(swedenPos);
+      camera.lookAt(0, 0, 0);
     }
-  })
+  });
 
   useFrame((_, delta) => {
-    // 1. Initial wait & zoom animation
-    if (!animationDone) {
-      waitRef.current += delta
-      if (waitRef.current < WAIT_TIME) return
+    elapsedRef.current += delta;
 
-      progressRef.current += delta / ZOOM_DURATION
-      const t = Math.min(1, progressRef.current)
-      const eased = easeInOutCubic(t)
+    // Phase 1: Hold at Sweden
+    if (phase === "sweden") {
+      camera.position.copy(swedenPos);
+      camera.lookAt(0, 0, 0);
+      if (elapsedRef.current >= WAIT_SWEDEN) {
+        setPhase("pan");
+        elapsedRef.current = 0;
+      }
+      return;
+    }
 
-      // Interpolate camera position from Sweden to KSC
-      camera.position.lerpVectors(startPos, endPos, eased)
-      camera.lookAt(centerPos)
-
+    // Phase 2: Pan from Sweden to KSC
+    if (phase === "pan") {
+      const t = Math.min(1, elapsedRef.current / PAN_TO_KSC);
+      const eased = easeInOutCubic(t);
+      camera.position.lerpVectors(swedenPos, kscPos, eased);
+      camera.lookAt(0, 0, 0);
       if (t >= 1) {
-        setAnimationDone(true)
-        // Store the exact target we are currently looking at
-        lastTarget.current.copy(centerPos)
+        setPhase("pullback");
+        elapsedRef.current = 0;
+      }
+      return;
+    }
+
+    // Phase 3: Pull back from KSC to epic wide shot
+    if (phase === "pullback") {
+      const t = Math.min(1, elapsedRef.current / PULL_BACK);
+      const eased = easeInOutCubic(t);
+      camera.position.lerpVectors(kscPos, widePos, eased);
+      // Smoothly shift look-at from Earth center to wide target
+      const lookAt = new THREE.Vector3().lerpVectors(
+        new THREE.Vector3(0, 0, 0),
+        wideTarget,
+        eased,
+      );
+      camera.lookAt(lookAt);
+      if (t >= 1) {
+        setPhase("done");
+        targetRef.current.copy(wideTarget);
         if (controlsRef.current) {
-          controlsRef.current.target.copy(centerPos)
+          controlsRef.current.target.copy(wideTarget);
         }
       }
-      return
+      return;
     }
 
-    // 2. Following the spacecraft after clicking play
+    // Phase 4: Done — follow spacecraft when playing
     if (controlsRef.current) {
-      // If we've hit play, our goal focus is the spacecraft
-      // Otherwise, stay looking where OrbitControls is currently looking
-      const scPos = getPositionAt(currentTime)
-      
-      const currentTarget = controlsRef.current.target.clone()
-      const nextTarget = currentTarget.clone()
+      const scPos = getPositionAt(currentTime);
+      const currentTarget = controlsRef.current.target as THREE.Vector3;
 
       if (isPlaying) {
-        // Smoothly lerp target towards the spacecraft
-        nextTarget.lerp(scPos, 0.04)
-        
-        // Find how much the target moved this frame
-        const deltaTarget = nextTarget.clone().sub(currentTarget)
-        
-        // Move the camera by the same amount to preserve orbiting distance/angle
-        camera.position.add(deltaTarget)
-        
-        // Apply the new target
-        controlsRef.current.target.copy(nextTarget)
-      } else {
-        // Not playing: user might be orbiting. Let them do whatever,
-        // and we just keep lastTarget updated to current state so that
-        // when play IS clicked, we start translating from whatever target they left it at.
-        lastTarget.current.copy(controlsRef.current.target)
+        const nextTarget = currentTarget.clone().lerp(scPos, 0.04);
+        const deltaTarget = nextTarget.clone().sub(currentTarget);
+        camera.position.add(deltaTarget);
+        controlsRef.current.target.copy(nextTarget);
       }
     }
-  })
+  });
 
   return (
     <OrbitControls
       ref={controlsRef}
-      enabled={animationDone}
+      enabled={phase === "done"}
       enableDamping
       dampingFactor={0.05}
-      minDistance={1.05} // allow getting really close to spacecraft/earth
+      minDistance={1.05}
       maxDistance={500}
-      target={[0, 0, 0]}
     />
-  )
+  );
 }
