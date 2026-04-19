@@ -1,0 +1,48 @@
+.container {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(10, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 200, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 100;
+  color: #e0e0e0;
+  font-family: "SF Mono", "JetBrains Mono", monospace;
+  min-width: 200px;
+}
+
+.header {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #00ffcc;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.value {
+  font-size: 14px;
+  color: #fff;
+  font-weight: 500;
+}
