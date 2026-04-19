@@ -24,7 +24,7 @@ export function App() {
     <div className={styles.root}>
       <Canvas
         shadows={false}
-        camera={{ fov: 55, near: 0.01, far: 10000 }}
+        camera={{ fov: 60, near: 0.01, far: 10000 }}
         gl={{ antialias: true, alpha: false, toneMapping: 4 }}
         onCreated={({ gl }) => {
           gl.toneMappingExposure = 1.0;

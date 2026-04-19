@@ -24,14 +24,22 @@ export function useTrajectory(): TrajectoryData {
   }, [points]);
 
   const getPositionAt = useMemo(() => {
-    const startT = points[0].t;
-    const endT = points[points.length - 1].t;
-    const duration = endT - startT;
+    const n = points.length;
     return (t: number): THREE.Vector3 => {
-      // Normalize time to 0–1 progress, use arc-length parameterized
-      // getPointAt so the spacecraft moves at constant visual speed.
-      const progress = Math.max(0, Math.min(1, (t - startT) / duration));
-      return curve.getPointAt(progress);
+      // Find bracketing waypoints for time t
+      let i = 0;
+      for (; i < n - 2; i++) {
+        if (points[i + 1].t >= t) break;
+      }
+      // Fraction within this time segment
+      const segDuration = points[i + 1].t - points[i].t;
+      const f =
+        segDuration > 0
+          ? Math.max(0, Math.min(1, (t - points[i].t) / segDuration))
+          : 0;
+      // Map to CatmullRom uniform parameter (NOT arc-length)
+      const u = (i + f) / (n - 1);
+      return curve.getPoint(u);
     };
   }, [points, curve]);
 

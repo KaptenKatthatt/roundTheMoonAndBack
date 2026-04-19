@@ -243,7 +243,7 @@ export function TimelineControls() {
         <span className={styles.rowLabel} style={{ marginLeft: 6 }}>
           ZOOM
         </span>
-        {([0.1, 0.3, 0.6] as const).map((f) => (
+        {([0.05, 0.1, 0.2] as const).map((f) => (
           <button
             key={f}
             className={styles.speedBtn}

@@ -1,4 +1,5 @@
 import { LAUNCH_TIME, SPLASHDOWN_TIME } from "@rtmab/shared";
+import { getMoonScenePosition } from "./moonOrbit";
 
 /**
  * Hardcoded Artemis II trajectory waypoints.
@@ -58,15 +59,18 @@ export const TRAJECTORY: SceneWaypoint[] = [
   { t: LAUNCH_TIME + 302_400_000,        p: [16.50,  2.50,-17.00], vel:  0.75, alt: 370_000 },
 
   // ═══ Phase 6: Lunar Flyby (T+3.8 d to T+4.5 d) ═══
-  // Moon center at flyby ≈ (17.1, 2.0, -18.2). Arc passes ~0.65 units from Moon center.
-  // Right side → far side (behind Moon) → left side = free-return slingshot.
-  { t: LAUNCH_TIME + 331_200_000,        p: [17.00,  2.20,-17.60], vel:  0.82, alt: 380_000 },  // approach
-  { t: LAUNCH_TIME + 342_000_000,        p: [17.48,  2.00,-17.89], vel:  1.50, alt: 384_000 },  // entry (right side)
-  { t: LAUNCH_TIME + 345_600_000,        p: [17.55,  2.05,-18.70], vel:  2.30, alt: 385_000 },  // far side (behind Moon)
-  { t: LAUNCH_TIME + 349_200_000,        p: [16.87,  2.00,-18.45], vel:  2.10, alt: 384_500 },  // exit (left side)
-  { t: LAUNCH_TIME + 360_000_000,        p: [16.20,  1.60,-17.00], vel:  1.80, alt: 383_000 },  // post-flyby
-  { t: LAUNCH_TIME + 374_400_000,        p: [15.30,  1.20,-15.00], vel:  1.50, alt: 378_000 },  // departing
-  { t: LAUNCH_TIME + 388_800_000,        p: [14.50,  0.80,-13.00], vel:  1.20, alt: 365_000 },  // en route home
+  // Trajectory wraps AROUND the Moon in a free-return slingshot.
+  // Arc radius 1.3 units from Moon center (Moon visual radius ≈ 1.09 at 4× scale).
+  // Moon moves during flyby; each point computed relative to Moon position at that timestamp.
+  { t: LAUNCH_TIME + 331_200_000,        p: [16.80,  2.30,-17.10], vel:  0.82, alt: 380_000 },  // pre-approach
+  { t: LAUNCH_TIME + 340_000_000,        p: [17.33,  2.10,-17.14], vel:  1.50, alt: 384_000 },  // arc entry (Earth-side)
+  { t: LAUNCH_TIME + 342_500_000,        p: [18.31,  2.05,-18.00], vel:  2.00, alt: 384_800 },  // quarter arc
+  { t: LAUNCH_TIME + 345_600_000,        p: [18.00,  2.00,-19.17], vel:  2.30, alt: 385_000 },  // behind Moon (far side)
+  { t: LAUNCH_TIME + 348_500_000,        p: [16.96,  1.95,-19.29], vel:  2.10, alt: 384_800 },  // quarter arc (other side)
+  { t: LAUNCH_TIME + 351_000_000,        p: [16.14,  1.90,-18.27], vel:  1.80, alt: 384_000 },  // arc exit
+  { t: LAUNCH_TIME + 360_000_000,        p: [15.80,  1.70,-17.00], vel:  1.50, alt: 380_000 },  // post-flyby departure
+  { t: LAUNCH_TIME + 374_400_000,        p: [15.00,  1.20,-15.00], vel:  1.30, alt: 370_000 },  // departing
+  { t: LAUNCH_TIME + 388_800_000,        p: [14.20,  0.80,-13.00], vel:  1.20, alt: 365_000 },  // en route home
 
   // ═══ Phase 7: Return Coast (T+5 d to T+9.5 d) ═══
   { t: LAUNCH_TIME + 432_000_000,        p: [14.00,  0.10,-10.00], vel:  1.00, alt: 320_000 },
@@ -76,9 +80,47 @@ export const TRAJECTORY: SceneWaypoint[] = [
   { t: LAUNCH_TIME + 691_200_000,        p: [ 2.50, -0.50,  1.50], vel:  2.50, alt:  55_000 },
   { t: LAUNCH_TIME + 734_400_000,        p: [ 1.50, -0.30,  2.00], vel:  4.00, alt:  25_000 },
 
-  // ═══ Phase 8: Re-entry & Splashdown (T+9.5 d to T+10 d) ═══
-  { t: LAUNCH_TIME + 777_600_000,        p: [ 0.50,  0.00,  1.30], vel:  7.50, alt:  10_000 },
-  { t: LAUNCH_TIME + 799_200_000,        p: [-0.20,  0.20,  1.05], vel:  9.50, alt:   6_800 },
-  { t: LAUNCH_TIME + 806_400_000,        p: [-0.52,  0.31,  0.92], vel: 11.00, alt:   6_471 },
+  // ═══ Phase 8: Re-entry & Splashdown (T+8.9 d to splashdown) ═══
+  { t: LAUNCH_TIME + 768_000_000,        p: [ 0.50,  0.00,  1.30], vel:  7.50, alt:  10_000 },
+  { t: LAUNCH_TIME + 778_200_000,        p: [-0.20,  0.20,  1.05], vel:  9.50, alt:   6_800 },
+  { t: LAUNCH_TIME + 780_600_000,        p: [-0.52,  0.31,  0.92], vel: 11.00, alt:   6_471 },
   { t: SPLASHDOWN_TIME,                   p: [-0.89, -0.22,  0.61], vel: 11.10, alt:   6_371 },
 ]
+
+// ── Flyby Moon-tracking ──────────────────────────────────────────────
+
+export const FLYBY_FIRST_IDX = 24;
+export const FLYBY_LAST_IDX = 31;
+
+/** Blend: how much each flyby waypoint tracks the Moon's current position */
+const FLYBY_BLEND = [0.3, 1, 1, 1, 1, 1, 0.7, 0.3];
+
+/** Pre-computed Moon positions at each flyby waypoint's timestamp */
+const FLYBY_MOON_POS: [number, number, number][] = [];
+for (let i = FLYBY_FIRST_IDX; i <= FLYBY_LAST_IDX; i++) {
+  const m = getMoonScenePosition(TRAJECTORY[i].t);
+  FLYBY_MOON_POS.push([m.x, m.y, m.z]);
+}
+
+/**
+ * Return trajectory positions with flyby waypoints shifted so the arc
+ * visually wraps around the Moon's position at `displayTime`.
+ *
+ * Non-flyby waypoints are returned unchanged.
+ */
+export function getShiftedTrajectoryPositions(
+  displayTime: number,
+): [number, number, number][] {
+  const moonNow = getMoonScenePosition(displayTime);
+  return TRAJECTORY.map((wp, i) => {
+    if (i < FLYBY_FIRST_IDX || i > FLYBY_LAST_IDX) return wp.p;
+    const fi = i - FLYBY_FIRST_IDX;
+    const blend = FLYBY_BLEND[fi];
+    const [mx, my, mz] = FLYBY_MOON_POS[fi];
+    return [
+      wp.p[0] + (moonNow.x - mx) * blend,
+      wp.p[1] + (moonNow.y - my) * blend,
+      wp.p[2] + (moonNow.z - mz) * blend,
+    ] as [number, number, number];
+  });
+}

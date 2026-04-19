@@ -8,6 +8,8 @@ import * as THREE from "three";
 import type { Group } from "three";
 
 const MOON_RADIUS = MOON_RADIUS_KM / EARTH_RADIUS_KM;
+const MOON_VISUAL_SCALE = 4; // Cinematic: 4× real proportional size
+const MOON_VIS_R = MOON_RADIUS * MOON_VISUAL_SCALE;
 
 export function Moon() {
   const groupRef = useRef<Group>(null);
@@ -24,22 +26,33 @@ export function Moon() {
   return (
     <group ref={groupRef}>
       {/* Always full-lit — meshBasicMaterial ignores scene lighting */}
-      <Sphere args={[MOON_RADIUS, 48, 48]}>
+      <Sphere args={[MOON_VIS_R, 64, 64]}>
         <meshBasicMaterial map={moonMap} />
       </Sphere>
-      {/* Glow halo for visibility at distance */}
-      <Sphere args={[MOON_RADIUS * 1.2, 48, 48]}>
+      {/* Inner glow halo */}
+      <Sphere args={[MOON_VIS_R * 1.08, 48, 48]}>
         <meshBasicMaterial
-          color="#aabbdd"
+          color="#b8c8ee"
           transparent
-          opacity={0.1}
+          opacity={0.06}
+          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </Sphere>
+      {/* Outer glow halo */}
+      <Sphere args={[MOON_VIS_R * 1.25, 48, 48]}>
+        <meshBasicMaterial
+          color="#8899bb"
+          transparent
+          opacity={0.03}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </Sphere>
       {/* Illuminate nearby spacecraft during flyby */}
-      <pointLight intensity={0.3} distance={8} color="#ccccdd" />
+      <pointLight intensity={0.5} distance={12} color="#ddddef" />
     </group>
   );
 }
