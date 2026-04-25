@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
+import { Analytics } from "@vercel/analytics/react";
 import { Scene } from "./components/Scene";
 import { TimelineControls } from "./components/ui/TimelineControls";
 import { MissionData } from "./components/ui/MissionData";
@@ -36,6 +37,7 @@ export function App() {
       </Canvas>
       <TimelineControls />
       <MissionData />
+      <Analytics />
     </div>
   );
 }
