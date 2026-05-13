@@ -12,6 +12,14 @@ moonRoute.get("/moon", async (c) => {
   const stop = c.req.query("stop") ?? "2026-04-12"
   const step = c.req.query("step") ?? "1h"
 
+  // Input validation
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  const stepRegex = /^\d+[hd]$/
+
+  if (!dateRegex.test(start) || !dateRegex.test(stop) || !stepRegex.test(step)) {
+    return c.json({ error: "Invalid parameters" }, 400)
+  }
+
   const cacheKey = `moon:${start}:${stop}:${step}`
   const cached = getCache<MoonResponse>(cacheKey)
   if (cached) return c.json(cached)
