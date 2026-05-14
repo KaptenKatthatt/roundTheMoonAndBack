@@ -15,10 +15,12 @@ export function Moon() {
   const groupRef = useRef<Group>(null);
   const moonMap = useTexture("/textures/2k_moon.jpg");
   const { getPositionAt } = useMoonPosition();
-  const currentTime = useTimeline((s) => s.currentTime);
 
   useFrame(() => {
     if (!groupRef.current) return;
+    // Bolt Optimization: Read currentTime from store instead of subscribing
+    // Prevents component from re-rendering 60 times per second during playback
+    const { currentTime } = useTimeline.getState();
     const pos = getPositionAt(currentTime);
     groupRef.current.position.copy(pos);
   });

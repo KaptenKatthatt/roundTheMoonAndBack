@@ -72,7 +72,6 @@ export function CameraAnimation() {
 
   // Follow logic
   const isPlaying = useTimeline((s) => s.isPlaying);
-  const currentTime = useTimeline((s) => s.currentTime);
   const { getPositionAt } = useTrajectory();
 
   // Smoothed lookAt target for the controls
@@ -87,6 +86,9 @@ export function CameraAnimation() {
   });
 
   useFrame((_, delta) => {
+    // Bolt Optimization: Read currentTime from store instead of subscribing
+    // Prevents component from re-rendering 60 times per second during playback
+    const { currentTime } = useTimeline.getState();
     elapsedRef.current += delta;
 
     // Phase "pan-ksc": smooth pan from recorded start position to KSC (on restart)
