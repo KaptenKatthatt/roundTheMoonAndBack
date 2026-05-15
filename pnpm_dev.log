@@ -1,0 +1,11 @@
+
+> round-the-moon-and-back@ dev /app
+> pnpm --parallel -r run dev
+
+Scope: 3 of 4 workspace projects
+apps/backend dev$ tsx watch src/index.ts
+apps/frontend dev$ vite
+apps/frontend dev:   VITE v6.4.2  ready in 260 ms
+apps/frontend dev:   ➜  Local:   http://localhost:5173/
+apps/frontend dev:   ➜  Network: use --host to expose
+apps/backend dev: Backend running on http://localhost:3001

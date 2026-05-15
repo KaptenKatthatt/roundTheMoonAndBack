@@ -1,0 +1,3 @@
+## 2024-05-15 - React Three Fiber Performance Optimization
+**Learning:** In React Three Fiber components, subscribing directly to rapidly changing Zustand state (e.g., `currentTime` which changes 60fps) in the component body triggers expensive React re-renders on every frame. This is extremely bad for performance, especially when it involves recalculating 3D geometry (like `Trajectory` curve points).
+**Action:** For values that change every frame in a 3D scene, use `useFrame` to read the state imperatively with `useStore.getState()` instead of reactive subscriptions, or if reactivity is needed, only recompute when actually necessary or throttling updates.
