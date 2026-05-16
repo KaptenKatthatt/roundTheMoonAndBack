@@ -71,8 +71,6 @@ export function CameraAnimation() {
   }
 
   // Follow logic
-  const isPlaying = useTimeline((s) => s.isPlaying);
-  const currentTime = useTimeline((s) => s.currentTime);
   const { getPositionAt } = useTrajectory();
 
   // Smoothed lookAt target for the controls
@@ -126,6 +124,15 @@ export function CameraAnimation() {
 
     // Phase 4: Done — follow spacecraft; handle view/zoom/focus commands
     if (controlsRef.current) {
+      // ⚡ Bolt: Read state in useFrame to avoid 60fps component re-renders
+      const {
+        currentTime,
+        isPlaying,
+        shouldFocusSpacecraft,
+        clearFocusSpacecraft,
+        cameraCommand,
+        clearCameraCommand,
+      } = useTimeline.getState();
       const scPos = getPositionAt(currentTime);
       const moonPos = getMoonScenePosition(currentTime);
       const currentTarget = controlsRef.current.target as THREE.Vector3;
@@ -145,13 +152,6 @@ export function CameraAnimation() {
           flybyBlendRef.current - delta * 1.5,
         );
       }
-
-      const {
-        shouldFocusSpacecraft,
-        clearFocusSpacecraft,
-        cameraCommand,
-        clearCameraCommand,
-      } = useTimeline.getState();
 
       // Focus on spacecraft: snap camera close to it
       if (shouldFocusSpacecraft) {
