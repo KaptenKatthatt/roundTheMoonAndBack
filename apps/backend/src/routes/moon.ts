@@ -12,6 +12,11 @@ moonRoute.get("/moon", async (c) => {
   const stop = c.req.query("stop") ?? "2026-04-12"
   const step = c.req.query("step") ?? "1h"
 
+  // 🛡️ Security: Validate inputs to prevent SSRF / third-party injection
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(stop) || !/^\d+[a-zA-Z]+$/.test(step)) {
+    return c.json({ error: "Invalid parameters" }, 400)
+  }
+
   const cacheKey = `moon:${start}:${stop}:${step}`
   const cached = getCache<MoonResponse>(cacheKey)
   if (cached) return c.json(cached)
@@ -32,15 +37,22 @@ moonRoute.get("/moon", async (c) => {
   })
 
   const url = `https://ssd.jpl.nasa.gov/api/horizons.api?${params}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    return c.json({ error: "Horizons API error", status: res.status }, 502)
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) {
+      return c.json({ error: "Horizons API error", status: res.status }, 502)
+    }
+
+    const raw = await res.text()
+    const positions = parseHorizonsVectors(raw)
+    const response: MoonResponse = { positions }
+
+    setCache(cacheKey, response, CACHE_TTL)
+    return c.json(response)
+  } catch (error) {
+    // 🛡️ Security: Do not expose stack traces or internal errors to client
+    console.error("Failed to fetch or parse Horizons data:", error)
+    return c.json({ error: "Internal Server Error" }, 500)
   }
-
-  const raw = await res.text()
-  const positions = parseHorizonsVectors(raw)
-  const response: MoonResponse = { positions }
-
-  setCache(cacheKey, response, CACHE_TTL)
-  return c.json(response)
 })
