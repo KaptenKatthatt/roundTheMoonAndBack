@@ -4,8 +4,14 @@ import * as THREE from "three";
 import { useTimeline } from "../hooks/useTimeline";
 import { getShiftedTrajectoryPositions } from "../data/trajectoryData";
 
+const THROTTLE_INTERVAL = 3_600_000; // Throttle to 1 simulated hour
+
 export function Trajectory() {
-  const currentTime = useTimeline((s) => s.currentTime);
+  // ⚡ Bolt: Throttle React subscription to 1-hour intervals since the expensive
+  // useMemo trajectory calculation only needs to update as the moon moves
+  const currentTime = useTimeline((s) =>
+    Math.floor(s.currentTime / THROTTLE_INTERVAL) * THROTTLE_INTERVAL
+  );
 
   const linePoints = useMemo(() => {
     const positions = getShiftedTrajectoryPositions(currentTime);
