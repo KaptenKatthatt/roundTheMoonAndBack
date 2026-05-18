@@ -4,7 +4,8 @@ import { SPLASHDOWN_TIME } from "@rtmab/shared"
 import styles from "./MissionData.module.css"
 
 export function MissionData() {
-  const currentTime = useTimeline((s) => s.currentTime)
+  // ⚡ Bolt: Throttle DOM subscription to 1-second intervals to prevent 60fps re-renders
+  const currentTime = useTimeline((s) => Math.floor(s.currentTime / 1000) * 1000)
   const { getVelocityAt, getAltitudeAt, loading } = useTrajectory()
 
   if (loading) return null

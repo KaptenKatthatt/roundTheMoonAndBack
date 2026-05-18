@@ -27,18 +27,17 @@ function formatMissionTime(ms: number): string {
 }
 
 export function TimelineControls() {
-  const {
-    currentTime,
-    isPlaying,
-    playbackSpeed,
-    togglePlaying,
-    setCurrentTime,
-    setIsPlaying,
-    setPlaybackSpeed,
-    focusSpacecraft,
-    resetCamera,
-    fireCameraCommand,
-  } = useTimeline();
+  // ⚡ Bolt: Throttle DOM subscription and extract selectors to prevent 60fps re-renders
+  const currentTime = useTimeline((s) => Math.floor(s.currentTime / 1000) * 1000);
+  const isPlaying = useTimeline((s) => s.isPlaying);
+  const playbackSpeed = useTimeline((s) => s.playbackSpeed);
+  const togglePlaying = useTimeline((s) => s.togglePlaying);
+  const setCurrentTime = useTimeline((s) => s.setCurrentTime);
+  const setIsPlaying = useTimeline((s) => s.setIsPlaying);
+  const setPlaybackSpeed = useTimeline((s) => s.setPlaybackSpeed);
+  const focusSpacecraft = useTimeline((s) => s.focusSpacecraft);
+  const resetCamera = useTimeline((s) => s.resetCamera);
+  const fireCameraCommand = useTimeline((s) => s.fireCameraCommand);
 
   const elapsed = currentTime - LAUNCH_TIME;
   const progress = elapsed / MISSION_DURATION;
