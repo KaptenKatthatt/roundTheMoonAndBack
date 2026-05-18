@@ -14,7 +14,8 @@ moonRoute.get("/moon", async (c) => {
 
   // Input validation
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-  const stepRegex = /^\d+[hmd]$/
+  // 🛡️ Sentinel: Restrict step length to mitigate DoS via large inputs
+  const stepRegex = /^\d{1,4}[hmd]$/
   if (!dateRegex.test(start) || !dateRegex.test(stop)) {
     return c.json({ error: "Invalid start or stop date format (expected YYYY-MM-DD)" }, 400)
   }
@@ -43,7 +44,13 @@ moonRoute.get("/moon", async (c) => {
 
   const url = `https://ssd.jpl.nasa.gov/api/horizons.api?${params}`
   try {
-    const res = await fetch(url)
+    // 🛡️ Sentinel: Add timeout to prevent external API hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeoutId)
+
     if (!res.ok) {
       return c.json({ error: "Horizons API error", status: res.status }, 502)
     }
