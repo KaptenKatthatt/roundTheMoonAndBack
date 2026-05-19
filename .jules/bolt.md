@@ -5,3 +5,7 @@
 ## 2024-05-18 - Zustand Throttling Effectiveness
 **Learning:** If a Zustand subscription relies on `Math.floor(currentTime / INTERVAL) * INTERVAL`, it correctly throttles React re-renders. Replacing this with an internal `useFrame` polling loop often introduces complexity and edge case regressions (e.g., missed first-renders) with negligible performance gain over the native throttling mechanism, even at high fast-forward speeds.
 **Action:** Do not attempt to bypass React rendering for UI components that are already throttled via Zustand selector intervals unless there is a verified bottleneck beyond the throttling rate.
+
+## 2026-05-19 - Pre-allocating vectors to reduce GC
+**Learning:** In Three.js and React Three Fiber, instantiating `THREE.Vector3` inside `useFrame` causes significant garbage collection overhead, leading to frame drops. Passing optional target vectors to data accessor functions avoids the need for object instantiation per frame.
+**Action:** Pre-allocate vectors at module scope to act as reusable scratchpads for `useFrame` and pass them into functions like `curve.getPoint` and `getMoonScenePosition` to allow in-place mutation.

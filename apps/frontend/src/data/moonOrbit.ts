@@ -15,7 +15,7 @@ const MOON_DEG_PER_DAY = 13.19
 const MOON_BASE_ANGLE_DEG = -99.4 // angle at LAUNCH_TIME
 const MOON_Y = 2.0
 
-export function getMoonScenePosition(t: number): THREE.Vector3 {
+export function getMoonScenePosition(t: number, target?: THREE.Vector3): THREE.Vector3 {
   const daysSinceLaunch = (t - LAUNCH_TIME) / 86_400_000
   const angleDeg = MOON_BASE_ANGLE_DEG + daysSinceLaunch * MOON_DEG_PER_DAY
   const angleRad = angleDeg * (Math.PI / 180)
@@ -23,5 +23,8 @@ export function getMoonScenePosition(t: number): THREE.Vector3 {
   const x = MOON_ORBIT_RADIUS * Math.cos(angleRad)
   const z = MOON_ORBIT_RADIUS * Math.sin(angleRad)
 
+  if (target) {
+    return target.set(x, MOON_Y, z)
+  }
   return new THREE.Vector3(x, MOON_Y, z)
 }
