@@ -17,7 +17,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shared
       hono:
-        specifier: ^4.6.0
+        specifier: ^4.12.14
         version: 4.12.14
     devDependencies:
       '@types/node':

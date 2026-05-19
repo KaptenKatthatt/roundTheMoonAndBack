@@ -7,7 +7,23 @@ import { trajectoryRoute } from "./routes/trajectory.js"
 
 const app = new Hono()
 
-app.use("/*", cors())
+app.use(
+  "/*",
+  cors({
+    origin: (origin) => {
+      // 🛡️ Sentinel: Restrict CORS to specific origins to prevent unauthorized access
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:4173",
+      ]
+      // In production, allow from VITE_FRONTEND_URL or generic environment variable
+      if (process.env.FRONTEND_URL) {
+        allowedOrigins.push(process.env.FRONTEND_URL)
+      }
+      return allowedOrigins.includes(origin) ? origin : null
+    },
+  })
+)
 app.use("/*", secureHeaders())
 
 app.route("/api", moonRoute)
