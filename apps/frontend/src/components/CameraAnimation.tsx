@@ -42,6 +42,9 @@ const _reentryOffset = new THREE.Vector3();
 const _nextTarget = new THREE.Vector3();
 const _deltaTarget = new THREE.Vector3();
 const _desiredPos = new THREE.Vector3();
+const _scPos = new THREE.Vector3();
+const _moonPos = new THREE.Vector3();
+const _posAhead = new THREE.Vector3();
 const ZOOM_BASE = 0.05;
 
 // Return coast camera follow — start immediately when flyby zoom ends
@@ -152,8 +155,8 @@ export function CameraAnimation() {
         cameraCommand,
         clearCameraCommand,
       } = useTimeline.getState();
-      const scPos = getPositionAt(currentTime);
-      const moonPos = getMoonScenePosition(currentTime);
+      const scPos = getPositionAt(currentTime, _scPos);
+      const moonPos = getMoonScenePosition(currentTime, _moonPos);
       const currentTarget = controlsRef.current.target as THREE.Vector3;
 
       // Update lunar-flyby zoom blend based on spacecraft–Moon distance
@@ -210,7 +213,7 @@ export function CameraAnimation() {
             anim.endPos.copy(scPos).addScaledVector(_viewDir, currentDist);
           } else {
             // Rear view: diagonally from behind + above + to the side
-            const posAhead = getPositionAt(currentTime + 60_000);
+            const posAhead = getPositionAt(currentTime + 60_000, _posAhead);
             _velDir.subVectors(posAhead, scPos).normalize();
             _rearDir.copy(_velDir)
               .multiplyScalar(-0.8)
@@ -272,7 +275,7 @@ export function CameraAnimation() {
         controlsRef.current.target.copy(currentTarget);
       } else if (currentTime > RETURN_FOLLOW_TIME) {
         // Return coast: active side tracking with Earth approach from above
-        const posAhead = getPositionAt(currentTime + 120_000);
+        const posAhead = getPositionAt(currentTime + 120_000, _posAhead);
         _velDir.subVectors(posAhead, scPos);
         if (_velDir.lengthSq() > 0.00001) _velDir.normalize();
         else _velDir.set(-1, 0, 0);

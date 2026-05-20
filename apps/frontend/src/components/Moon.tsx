@@ -11,6 +11,9 @@ const MOON_RADIUS = MOON_RADIUS_KM / EARTH_RADIUS_KM;
 const MOON_VISUAL_SCALE = 4; // Cinematic: 4× real proportional size
 const MOON_VIS_R = MOON_RADIUS * MOON_VISUAL_SCALE;
 
+// ⚡ Bolt: Pre-allocate static vectors and scratchpad vectors to avoid 60fps garbage collection
+const _moonPos = new THREE.Vector3();
+
 export function Moon() {
   const groupRef = useRef<Group>(null);
   const moonMap = useTexture("/textures/2k_moon.jpg");
@@ -20,7 +23,7 @@ export function Moon() {
     if (!groupRef.current) return;
     // ⚡ Bolt: Read state in useFrame to avoid 60fps re-renders
     const { currentTime } = useTimeline.getState();
-    const pos = getPositionAt(currentTime);
+    const pos = getPositionAt(currentTime, _moonPos);
     groupRef.current.position.copy(pos);
   });
 
