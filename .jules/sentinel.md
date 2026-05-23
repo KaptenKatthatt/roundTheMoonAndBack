@@ -10,3 +10,8 @@
 3. Input validation regex lacked length limits.
 **Learning:** Even simple APIs can be vulnerable to resource exhaustion if parameters are unbounded or external dependencies fail to respond.
 **Prevention:** Implement maximum size limits for in-memory caches, use `AbortController` for timeouts on `fetch` calls, and add length constraints to regex validation.
+
+## 2026-05-23 - [Preventing Path and Stack Trace Leakage on File I/O]
+**Vulnerability:** The `/api/trajectory` endpoint performed a file read operation without a try/catch block. If the file is missing or unreadable, this could crash the route or be caught by a default framework handler that leaks the server's internal directory structure or a stack trace to the client.
+**Learning:** Default error handlers in web frameworks can sometimes leak sensitive internal implementation details when unhandled exceptions occur, especially related to file system operations.
+**Prevention:** Wrap all file system operations and potential parsing errors in explicit `try/catch` blocks, and return generic, sanitized error responses to the client.
