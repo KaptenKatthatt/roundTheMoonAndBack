@@ -14,6 +14,12 @@ const FLYBY_START_T = LAUNCH_TIME + 331_200_000; // T+3.83d
 const FLYBY_END_T = LAUNCH_TIME + 388_800_000; // T+4.5d
 let lastLoggedHour = -1;
 
+// Pre-allocate vectors to avoid GC spikes
+const _pos = new THREE.Vector3();
+const _ahead = new THREE.Vector3();
+const _forward = new THREE.Vector3();
+const _moonPos = new THREE.Vector3();
+
 export function Spacecraft() {
   const groupRef = useRef<Group>(null);
   const serviceModuleRef = useRef<Group>(null);
@@ -23,7 +29,7 @@ export function Spacecraft() {
     if (!groupRef.current) return;
 
     const { currentTime } = useTimeline.getState();
-    const pos = getPositionAt(currentTime);
+    const pos = getPositionAt(currentTime, _pos);
     groupRef.current.position.copy(pos);
 
     // Debug: log spacecraft-Moon distance during flyby (once per simulated hour)
@@ -31,7 +37,7 @@ export function Spacecraft() {
       const hour = Math.floor(currentTime / 3_600_000);
       if (hour !== lastLoggedHour) {
         lastLoggedHour = hour;
-        const moonPos = getMoonScenePosition(currentTime);
+        const moonPos = getMoonScenePosition(currentTime, _moonPos);
         const dist = pos.distanceTo(moonPos);
         const days = ((currentTime - LAUNCH_TIME) / 86_400_000).toFixed(2);
         console.log(`[Flyby] T+${days}d  SC↔Moon: ${dist.toFixed(2)} units`);
@@ -39,9 +45,9 @@ export function Spacecraft() {
     }
 
     // Orient along trajectory tangent (look ahead slightly)
-    const ahead = getPositionAt(currentTime + 60_000);
+    const ahead = getPositionAt(currentTime + 60_000, _ahead);
     if (ahead.distanceTo(pos) > 0.001) {
-      const forward = ahead.clone().sub(pos).normalize();
+      const forward = _forward.subVectors(ahead, pos).normalize();
       groupRef.current.up.crossVectors(forward, SUN_DIR).normalize();
       groupRef.current.lookAt(ahead);
     }
