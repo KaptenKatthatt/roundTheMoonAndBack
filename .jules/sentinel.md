@@ -10,3 +10,7 @@
 3. Input validation regex lacked length limits.
 **Learning:** Even simple APIs can be vulnerable to resource exhaustion if parameters are unbounded or external dependencies fail to respond.
 **Prevention:** Implement maximum size limits for in-memory caches, use `AbortController` for timeouts on `fetch` calls, and add length constraints to regex validation.
+## 2024-05-24 - Missing Error Handling in Trajectory Route Exposes Backend Internals
+**Vulnerability:** File system operations (`readFile`) in the `/trajectory` route lacked a `try...catch` block. If the JSON data file went missing or encountered read permission issues, it could potentially throw unhandled exceptions, triggering default error handlers that leak internal stack traces or server file system paths to the client.
+**Learning:** Default framework error handling (like Hono's fallback) doesn't always automatically sanitize native Node.js filesystem errors.
+**Prevention:** Always wrap filesystem or external service calls in explicit `try...catch` blocks and return standardized, sanitized generic error responses (e.g., `500 Internal server error`).
