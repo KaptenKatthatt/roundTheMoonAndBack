@@ -10,3 +10,8 @@
 3. Input validation regex lacked length limits.
 **Learning:** Even simple APIs can be vulnerable to resource exhaustion if parameters are unbounded or external dependencies fail to respond.
 **Prevention:** Implement maximum size limits for in-memory caches, use `AbortController` for timeouts on `fetch` calls, and add length constraints to regex validation.
+
+## 2026-05-25 - [Prevent Path Leakage in Error Responses]
+**Vulnerability:** File system operations (like `readFile`) inside Hono endpoints were not wrapped in `try/catch` blocks.
+**Learning:** If the file is missing or unreadable, an unhandled exception is thrown. Hono's default error handler could potentially expose internal server paths or stack traces directly to the client, leading to information disclosure.
+**Prevention:** Always wrap explicit file system operations (and other operations that might reveal infrastructure details) in `try/catch` blocks and return generic, sanitized JSON error responses (e.g., 500 status).

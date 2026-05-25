@@ -13,8 +13,14 @@ let cached: TrajectoryResponse | null = null
 trajectoryRoute.get("/trajectory", async (c) => {
   if (cached) return c.json(cached)
 
-  const dataPath = resolve(__dirname, "../../data/trajectory.json")
-  const raw = await readFile(dataPath, "utf-8")
-  cached = JSON.parse(raw) as TrajectoryResponse
-  return c.json(cached)
+  try {
+    const dataPath = resolve(__dirname, "../../data/trajectory.json")
+    const raw = await readFile(dataPath, "utf-8")
+    cached = JSON.parse(raw) as TrajectoryResponse
+    return c.json(cached)
+  } catch (error) {
+    // 🛡️ Sentinel: Catch fs errors to prevent path/stack trace leakage
+    console.error("Failed to read trajectory data:", error)
+    return c.json({ error: "Internal Server Error" }, 500)
+  }
 })
