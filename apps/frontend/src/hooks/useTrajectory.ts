@@ -7,7 +7,7 @@ interface TrajectoryData {
   points: SceneWaypoint[];
   curve: THREE.CatmullRomCurve3;
   /** Get interpolated scene position at a given timestamp */
-  getPositionAt: (t: number) => THREE.Vector3;
+  getPositionAt: (t: number, target?: THREE.Vector3) => THREE.Vector3;
   /** Get velocity (km/s) at a given timestamp */
   getVelocityAt: (t: number) => number;
   /** Get altitude (km from Earth center) at a given timestamp */
@@ -25,7 +25,7 @@ export function useTrajectory(): TrajectoryData {
 
   const getPositionAt = useMemo(() => {
     const n = points.length;
-    return (t: number): THREE.Vector3 => {
+    return (t: number, target?: THREE.Vector3): THREE.Vector3 => {
       // Find bracketing waypoints for time t
       let i = 0;
       for (; i < n - 2; i++) {
@@ -39,7 +39,7 @@ export function useTrajectory(): TrajectoryData {
           : 0;
       // Map to CatmullRom uniform parameter (NOT arc-length)
       const u = (i + f) / (n - 1);
-      return curve.getPoint(u);
+      return curve.getPoint(u, target);
     };
   }, [points, curve]);
 
