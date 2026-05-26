@@ -10,3 +10,8 @@
 3. Input validation regex lacked length limits.
 **Learning:** Even simple APIs can be vulnerable to resource exhaustion if parameters are unbounded or external dependencies fail to respond.
 **Prevention:** Implement maximum size limits for in-memory caches, use `AbortController` for timeouts on `fetch` calls, and add length constraints to regex validation.
+
+## 2026-05-26 - [Backend Security Improvement: Safe Error Handling for File Operations]
+**Vulnerability:** Unhandled exceptions in backend file operations (`readFile` and `JSON.parse`) in `trajectoryRoute.ts`.
+**Learning:** Default error handlers in web frameworks can inadvertently expose sensitive information such as absolute server file paths or stack traces when internal exceptions are thrown.
+**Prevention:** Wrap all file system and parsing operations in explicit `try/catch` blocks, log details internally, and return a sanitized, generic 500 error response to the client.
