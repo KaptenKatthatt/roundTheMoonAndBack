@@ -14,6 +14,11 @@ const FLYBY_START_T = LAUNCH_TIME + 331_200_000; // T+3.83d
 const FLYBY_END_T = LAUNCH_TIME + 388_800_000; // T+4.5d
 let lastLoggedHour = -1;
 
+const _scPos = new THREE.Vector3();
+const _aheadPos = new THREE.Vector3();
+const _moonPos = new THREE.Vector3();
+const _forward = new THREE.Vector3();
+
 export function Spacecraft() {
   const groupRef = useRef<Group>(null);
   const serviceModuleRef = useRef<Group>(null);
@@ -23,27 +28,27 @@ export function Spacecraft() {
     if (!groupRef.current) return;
 
     const { currentTime } = useTimeline.getState();
-    const pos = getPositionAt(currentTime);
-    groupRef.current.position.copy(pos);
+    getPositionAt(currentTime, _scPos);
+    groupRef.current.position.copy(_scPos);
 
     // Debug: log spacecraft-Moon distance during flyby (once per simulated hour)
     if (currentTime >= FLYBY_START_T && currentTime <= FLYBY_END_T) {
       const hour = Math.floor(currentTime / 3_600_000);
       if (hour !== lastLoggedHour) {
         lastLoggedHour = hour;
-        const moonPos = getMoonScenePosition(currentTime);
-        const dist = pos.distanceTo(moonPos);
+        getMoonScenePosition(currentTime, _moonPos);
+        const dist = _scPos.distanceTo(_moonPos);
         const days = ((currentTime - LAUNCH_TIME) / 86_400_000).toFixed(2);
         console.log(`[Flyby] T+${days}d  SC↔Moon: ${dist.toFixed(2)} units`);
       }
     }
 
     // Orient along trajectory tangent (look ahead slightly)
-    const ahead = getPositionAt(currentTime + 60_000);
-    if (ahead.distanceTo(pos) > 0.001) {
-      const forward = ahead.clone().sub(pos).normalize();
-      groupRef.current.up.crossVectors(forward, SUN_DIR).normalize();
-      groupRef.current.lookAt(ahead);
+    getPositionAt(currentTime + 60_000, _aheadPos);
+    if (_aheadPos.distanceTo(_scPos) > 0.001) {
+      _forward.subVectors(_aheadPos, _scPos).normalize();
+      groupRef.current.up.crossVectors(_forward, SUN_DIR).normalize();
+      groupRef.current.lookAt(_aheadPos);
     }
 
     // Hide service module only at re-entry (ESM jettisoned just before atmosphere)

@@ -42,6 +42,11 @@ const _reentryOffset = new THREE.Vector3();
 const _nextTarget = new THREE.Vector3();
 const _deltaTarget = new THREE.Vector3();
 const _desiredPos = new THREE.Vector3();
+const _scPos = new THREE.Vector3();
+const _moonPos = new THREE.Vector3();
+const _posAhead = new THREE.Vector3();
+const _origin = new THREE.Vector3(0, 0, 0);
+const _lookAt = new THREE.Vector3();
 const ZOOM_BASE = 0.05;
 
 // Return coast camera follow — start immediately when flyby zoom ends
@@ -125,12 +130,12 @@ export function CameraAnimation() {
       const eased = easeInOutCubic(t);
       camera.position.lerpVectors(kscPos, widePos, eased);
       // Smoothly shift look-at from Earth center to wide target
-      const lookAt = new THREE.Vector3().lerpVectors(
-        new THREE.Vector3(0, 0, 0),
+      _lookAt.lerpVectors(
+        _origin,
         wideTarget,
         eased,
       );
-      camera.lookAt(lookAt);
+      camera.lookAt(_lookAt);
       if (t >= 1) {
         setPhase("done");
         targetRef.current.copy(wideTarget);
@@ -152,12 +157,12 @@ export function CameraAnimation() {
         cameraCommand,
         clearCameraCommand,
       } = useTimeline.getState();
-      const scPos = getPositionAt(currentTime);
-      const moonPos = getMoonScenePosition(currentTime);
+      getPositionAt(currentTime, _scPos);
+      getMoonScenePosition(currentTime, _moonPos);
       const currentTarget = controlsRef.current.target as THREE.Vector3;
 
       // Update lunar-flyby zoom blend based on spacecraft–Moon distance
-      const moonDist = scPos.distanceTo(moonPos);
+      const moonDist = _scPos.distanceTo(_moonPos);
       if (moonDist < FLYBY_ENTER_DIST) {
         flybyBlendRef.current = Math.min(
           1,
@@ -177,8 +182,8 @@ export function CameraAnimation() {
         zoomFractionRef.current = 0;
         camAnimRef.current.active = false;
         clearFocusSpacecraft();
-        camera.position.copy(scPos).add(FOCUS_OFFSET);
-        controlsRef.current.target.copy(scPos);
+        camera.position.copy(_scPos).add(FOCUS_OFFSET);
+        controlsRef.current.target.copy(_scPos);
         return;
       }
 
@@ -190,15 +195,15 @@ export function CameraAnimation() {
         const anim = camAnimRef.current;
         anim.startPos.copy(camera.position);
         anim.startLook.copy(currentTarget);
-        anim.endLook.copy(scPos);
+        anim.endLook.copy(_scPos);
         anim.elapsed = 0;
         anim.duration = 1.2;
-        _earthDir.copy(scPos).normalize();
+        _earthDir.copy(_scPos).normalize();
         _sideDir.crossVectors(_earthDir, UP).normalize();
         if (cameraCommand.type === "view") {
           // Preserve the current camera distance — only rotate the viewing angle
           const currentDist = Math.max(
-            camera.position.distanceTo(scPos),
+            camera.position.distanceTo(_scPos),
             ZOOM_BASE / 0.6,
           );
           if (cameraCommand.mode === "side") {
@@ -207,27 +212,27 @@ export function CameraAnimation() {
               .multiplyScalar(0.7)
               .addScaledVector(_earthDir, 1.0)
               .normalize();
-            anim.endPos.copy(scPos).addScaledVector(_viewDir, currentDist);
+            anim.endPos.copy(_scPos).addScaledVector(_viewDir, currentDist);
           } else {
             // Rear view: diagonally from behind + above + to the side
-            const posAhead = getPositionAt(currentTime + 60_000);
-            _velDir.subVectors(posAhead, scPos).normalize();
+            getPositionAt(currentTime + 60_000, _posAhead);
+            _velDir.subVectors(_posAhead, _scPos).normalize();
             _rearDir.copy(_velDir)
               .multiplyScalar(-0.8)
               .addScaledVector(UP, 0.5)
               .addScaledVector(_sideDir, 0.35)
               .normalize();
-            anim.endPos.copy(scPos).addScaledVector(_rearDir, currentDist);
+            anim.endPos.copy(_scPos).addScaledVector(_rearDir, currentDist);
           }
         } else {
           // Zoom: keep current viewing direction, change distance only
           zoomFractionRef.current = cameraCommand.fraction;
           const newDist = ZOOM_BASE / cameraCommand.fraction;
-          _camDir.subVectors(camera.position, scPos);
+          _camDir.subVectors(camera.position, _scPos);
           if (_camDir.length() < 0.001) _camDir.set(0.1, 0.08, 0.15);
           _camDir.normalize();
           zoomDirRef.current.copy(_camDir);
-          anim.endPos.copy(scPos).addScaledVector(_camDir, newDist);
+          anim.endPos.copy(_scPos).addScaledVector(_camDir, newDist);
           anim.duration = 0.8;
         }
         anim.active = true;
@@ -254,26 +259,26 @@ export function CameraAnimation() {
       // If user has zoomed, maintain that zoom level instead of default follow
       if (zoomFractionRef.current > 0 && !camAnimRef.current.active) {
         const zoomDist = ZOOM_BASE / zoomFractionRef.current;
-        _desiredPos.copy(scPos).addScaledVector(zoomDirRef.current, zoomDist);
+        _desiredPos.copy(_scPos).addScaledVector(zoomDirRef.current, zoomDist);
         const smooth = 1 - Math.exp(-6.0 * delta);
         camera.position.lerp(_desiredPos, smooth);
-        currentTarget.lerp(scPos, smooth);
+        currentTarget.lerp(_scPos, smooth);
         controlsRef.current.target.copy(currentTarget);
       } else if (flybyBlendRef.current > 0.01) {
         // Lunar flyby zoom: camera tracks Moon from the side
-        _moonDir.copy(moonPos).normalize();
+        _moonDir.copy(_moonPos).normalize();
         _flybySideDir.crossVectors(_moonDir, UP).normalize();
-        _flybyCamPos.copy(moonPos)
+        _flybyCamPos.copy(_moonPos)
           .addScaledVector(_flybySideDir, -2.5)
-          .setY(moonPos.y + 0.3);
+          .setY(_moonPos.y + 0.3);
         const smooth = 1 - Math.exp(-2.0 * delta);
         camera.position.lerp(_flybyCamPos, flybyBlendRef.current * smooth);
-        currentTarget.lerp(moonPos, flybyBlendRef.current * smooth);
+        currentTarget.lerp(_moonPos, flybyBlendRef.current * smooth);
         controlsRef.current.target.copy(currentTarget);
       } else if (currentTime > RETURN_FOLLOW_TIME) {
         // Return coast: active side tracking with Earth approach from above
-        const posAhead = getPositionAt(currentTime + 120_000);
-        _velDir.subVectors(posAhead, scPos);
+        getPositionAt(currentTime + 120_000, _posAhead);
+        _velDir.subVectors(_posAhead, _scPos);
         if (_velDir.lengthSq() > 0.00001) _velDir.normalize();
         else _velDir.set(-1, 0, 0);
         _sideDir.crossVectors(_velDir, UP).normalize();
@@ -298,7 +303,7 @@ export function CameraAnimation() {
 
         // Re-entry overhead offset: camera above spacecraft, outward from Earth
         const reentryDist = 2.5;
-        _scOutward.copy(scPos).normalize();
+        _scOutward.copy(_scPos).normalize();
         _reentryOffset.copy(_scOutward)
           .multiplyScalar(reentryDist)
           .addScaledVector(UP, reentryDist * 0.6)
@@ -308,9 +313,9 @@ export function CameraAnimation() {
         _coastOffset.lerp(_reentryOffset, easedEarth);
 
         // Look target: spacecraft during coast, spacecraft during re-entry too
-        const lookTarget = scPos; // scPos is safe to use directly here
+        const lookTarget = _scPos; // _scPos is safe to use directly here
 
-        _desiredPos.copy(scPos).add(_coastOffset);
+        _desiredPos.copy(_scPos).add(_coastOffset);
 
         // Ensure camera stays outside Earth (radius > 1.05)
         const camR = _desiredPos.length();
@@ -327,7 +332,7 @@ export function CameraAnimation() {
         const followStrength = 1 - flybyBlendRef.current;
         if (followStrength > 0.01) {
           _nextTarget.copy(currentTarget)
-            .lerp(scPos, 0.04 * followStrength);
+            .lerp(_scPos, 0.04 * followStrength);
           _deltaTarget.subVectors(_nextTarget, currentTarget);
           camera.position.add(_deltaTarget);
           controlsRef.current.target.copy(_nextTarget);
