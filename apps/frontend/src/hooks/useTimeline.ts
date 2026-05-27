@@ -63,6 +63,39 @@ export const useTimeline = create<TimelineState>((set, get) => ({
   },
 }));
 
+// ⚡ Bolt: Move phases array outside the function to prevent reallocating an
+// 8-element array 60 times a second when called from useFrame.
+const MISSION_PHASES: { phase: MissionPhase; start: number; label: string }[] = [
+  { phase: "launch", start: LAUNCH_TIME, label: "Launch & Ascent" },
+  { phase: "leo", start: LAUNCH_TIME + 888_000, label: "Low Earth Orbit" },
+  {
+    phase: "high-earth-orbit",
+    start: LAUNCH_TIME + 3_600_000,
+    label: "High Earth Orbit",
+  },
+  {
+    phase: "tli",
+    start: LAUNCH_TIME + 86_400_000,
+    label: "Trans-Lunar Injection",
+  },
+  {
+    phase: "outbound-coast",
+    start: LAUNCH_TIME + 86_750_000,
+    label: "Outbound Coast",
+  },
+  {
+    phase: "lunar-flyby",
+    start: LAUNCH_TIME + 428_688_000,
+    label: "Lunar Flyby",
+  },
+  {
+    phase: "return-coast",
+    start: LAUNCH_TIME + 446_688_000,
+    label: "Return Coast",
+  },
+  { phase: "re-entry", start: LAUNCH_TIME + 770_688_000, label: "Re-entry" },
+];
+
 /**
  * Determine mission phase from timestamp.
  */
@@ -70,40 +103,9 @@ export function getMissionPhase(t: number): {
   phase: MissionPhase;
   label: string;
 } {
-  const phases: { phase: MissionPhase; start: number; label: string }[] = [
-    { phase: "launch", start: LAUNCH_TIME, label: "Launch & Ascent" },
-    { phase: "leo", start: LAUNCH_TIME + 888_000, label: "Low Earth Orbit" },
-    {
-      phase: "high-earth-orbit",
-      start: LAUNCH_TIME + 3_600_000,
-      label: "High Earth Orbit",
-    },
-    {
-      phase: "tli",
-      start: LAUNCH_TIME + 86_400_000,
-      label: "Trans-Lunar Injection",
-    },
-    {
-      phase: "outbound-coast",
-      start: LAUNCH_TIME + 86_750_000,
-      label: "Outbound Coast",
-    },
-    {
-      phase: "lunar-flyby",
-      start: LAUNCH_TIME + 428_688_000,
-      label: "Lunar Flyby",
-    },
-    {
-      phase: "return-coast",
-      start: LAUNCH_TIME + 446_688_000,
-      label: "Return Coast",
-    },
-    { phase: "re-entry", start: LAUNCH_TIME + 770_688_000, label: "Re-entry" },
-  ];
-
-  for (let i = phases.length - 1; i >= 0; i--) {
-    if (t >= phases[i].start)
-      return { phase: phases[i].phase, label: phases[i].label };
+  for (let i = MISSION_PHASES.length - 1; i >= 0; i--) {
+    if (t >= MISSION_PHASES[i].start)
+      return { phase: MISSION_PHASES[i].phase, label: MISSION_PHASES[i].label };
   }
   return { phase: "launch", label: "Launch & Ascent" };
 }

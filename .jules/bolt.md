@@ -8,3 +8,6 @@
 ## 2024-05-26 - Three.js Object Allocation in useFrame
 **Learning:** Instantiating new objects like `THREE.Vector3` on every frame inside `useFrame` leads to high garbage collection pressure, dropping frame rates and causing visual stutter in Three.js applications.
 **Action:** Pre-allocate static vectors outside the component, and use optional `target` parameters in data hooks (e.g. `getPositionAt(t, _scPos)`) to mutate and reuse these pre-allocated vectors. This avoids generating new instances within render loops.
+## 2025-05-27 - Object Allocation in Frequently Called Functions
+**Learning:** Functions called within `useFrame` or high-frequency loops (like `getMissionPhase`) that declare static arrays or objects internally will re-allocate memory 60 times a second, causing garbage collection spikes.
+**Action:** Always hoist static arrays and objects (like mission phases mappings) to module-level constants outside of frequently called functions to prevent unnecessary memory allocations and GC pauses.
