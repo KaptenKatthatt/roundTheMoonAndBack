@@ -6,6 +6,10 @@ import { getShiftedTrajectoryPositions } from "../data/trajectoryData";
 
 const THROTTLE_INTERVAL = 3_600_000; // Throttle to 1 simulated hour
 
+const CACHED_VECTORS: THREE.Vector3[] = [];
+const SHARED_CURVE = new THREE.CatmullRomCurve3(CACHED_VECTORS, false, "catmullrom", 0.5);
+const _target = new THREE.Vector3();
+
 export function Trajectory() {
   // ⚡ Bolt: Throttle React subscription to 1-hour intervals since the expensive
   // useMemo trajectory calculation only needs to update as the moon moves
@@ -13,13 +17,30 @@ export function Trajectory() {
     Math.floor(s.currentTime / THROTTLE_INTERVAL) * THROTTLE_INTERVAL
   );
 
+  // ⚡ Bolt: Pre-allocate static curve and target vector to prevent ~535 THREE.Vector3
+  // garbage collection allocations per update during high-speed playback
   const linePoints = useMemo(() => {
     const positions = getShiftedTrajectoryPositions(currentTime);
-    const vectors = positions.map((p) => new THREE.Vector3(...p));
-    const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.5);
-    return curve
-      .getPoints(500)
-      .map((v) => [v.x, v.y, v.z] as [number, number, number]);
+
+    // Update vector coordinates in-place instead of instantiating new ones
+    while (CACHED_VECTORS.length < positions.length) {
+      CACHED_VECTORS.push(new THREE.Vector3());
+    }
+    // If positions is smaller, only update up to positions.length and update the curve's points reference
+    SHARED_CURVE.points = CACHED_VECTORS.slice(0, positions.length);
+
+    for (let i = 0; i < positions.length; i++) {
+      SHARED_CURVE.points[i].set(positions[i][0], positions[i][1], positions[i][2]);
+    }
+
+    // Sample points reusing a single target vector
+    const pointsArray: [number, number, number][] = new Array(501);
+    for (let i = 0; i <= 500; i++) {
+      SHARED_CURVE.getPoint(i / 500, _target);
+      pointsArray[i] = [_target.x, _target.y, _target.z];
+    }
+
+    return pointsArray;
   }, [currentTime]);
 
   if (linePoints.length < 2) return null;
