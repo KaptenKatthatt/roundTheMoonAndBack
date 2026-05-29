@@ -1,0 +1,3 @@
+## 2024-05-28 - Avoid 60fps garbage collection in useFrame when mapping standard arrays
+**Learning:** In Three.js applications, standard array methods like `.map(() => new THREE.Vector3(...p))` inside React hooks (like useMemo connected to throttled state) can still trigger thousands of GC allocations during high-speed playback, causing noticeable frame drops as the timeline speeds up.
+**Action:** Always pre-allocate module-level `THREE.Vector3` arrays matching the expected size, along with single module-level `_target` vectors for `getPoint()` methods, updating coordinates via `.set()` to completely eliminate GC spikes during rapid updates.

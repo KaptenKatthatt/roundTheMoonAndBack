@@ -105,7 +105,9 @@ export function getMissionPhase(t: number): {
 } {
   for (let i = MISSION_PHASES.length - 1; i >= 0; i--) {
     if (t >= MISSION_PHASES[i].start)
-      return { phase: MISSION_PHASES[i].phase, label: MISSION_PHASES[i].label };
+      // ⚡ Bolt: Return the pre-allocated cached object instead of a new
+      // literal to prevent 60fps garbage collection spikes when called from useFrame
+      return MISSION_PHASES[i];
   }
-  return { phase: "launch", label: "Launch & Ascent" };
+  return MISSION_PHASES[0];
 }
