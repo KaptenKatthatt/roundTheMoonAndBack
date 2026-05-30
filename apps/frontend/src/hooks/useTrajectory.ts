@@ -15,56 +15,52 @@ interface TrajectoryData {
   loading: boolean;
 }
 
+// ⚡ Bolt: Hoisted static curve and interpolation functions to module level to
+// prevent redundant memory allocations across multiple component instances
+const points = TRAJECTORY;
+
+const curve = (() => {
+  const vectors = points.map((pt) => new THREE.Vector3(...pt.p));
+  return new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.5);
+})();
+
+const getPositionAt = (t: number, target?: THREE.Vector3): THREE.Vector3 => {
+  const n = points.length;
+  // Find bracketing waypoints for time t
+  let i = 0;
+  for (; i < n - 2; i++) {
+    if (points[i + 1].t >= t) break;
+  }
+  // Fraction within this time segment
+  const segDuration = points[i + 1].t - points[i].t;
+  const f =
+    segDuration > 0
+      ? Math.max(0, Math.min(1, (t - points[i].t) / segDuration))
+      : 0;
+  // Map to CatmullRom uniform parameter (NOT arc-length)
+  const u = (i + f) / (n - 1);
+  return curve.getPoint(u, target);
+};
+
+const getVelocityAt = (t: number): number => {
+  const idx = findSegmentIndex(points, t);
+  const p0 = points[idx];
+  const p1 = points[Math.min(idx + 1, points.length - 1)];
+  if (p0.t === p1.t) return p0.vel;
+  const frac = (t - p0.t) / (p1.t - p0.t);
+  return p0.vel + (p1.vel - p0.vel) * frac;
+};
+
+const getAltitudeAt = (t: number): number => {
+  const idx = findSegmentIndex(points, t);
+  const p0 = points[idx];
+  const p1 = points[Math.min(idx + 1, points.length - 1)];
+  if (p0.t === p1.t) return p0.alt;
+  const frac = (t - p0.t) / (p1.t - p0.t);
+  return p0.alt + (p1.alt - p0.alt) * frac;
+};
+
 export function useTrajectory(): TrajectoryData {
-  const points = TRAJECTORY;
-
-  const curve = useMemo(() => {
-    const vectors = points.map((pt) => new THREE.Vector3(...pt.p));
-    return new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.5);
-  }, [points]);
-
-  const getPositionAt = useMemo(() => {
-    const n = points.length;
-    return (t: number, target?: THREE.Vector3): THREE.Vector3 => {
-      // Find bracketing waypoints for time t
-      let i = 0;
-      for (; i < n - 2; i++) {
-        if (points[i + 1].t >= t) break;
-      }
-      // Fraction within this time segment
-      const segDuration = points[i + 1].t - points[i].t;
-      const f =
-        segDuration > 0
-          ? Math.max(0, Math.min(1, (t - points[i].t) / segDuration))
-          : 0;
-      // Map to CatmullRom uniform parameter (NOT arc-length)
-      const u = (i + f) / (n - 1);
-      return curve.getPoint(u, target);
-    };
-  }, [points, curve]);
-
-  const getVelocityAt = useMemo(() => {
-    return (t: number): number => {
-      const idx = findSegmentIndex(points, t);
-      const p0 = points[idx];
-      const p1 = points[Math.min(idx + 1, points.length - 1)];
-      if (p0.t === p1.t) return p0.vel;
-      const frac = (t - p0.t) / (p1.t - p0.t);
-      return p0.vel + (p1.vel - p0.vel) * frac;
-    };
-  }, [points]);
-
-  const getAltitudeAt = useMemo(() => {
-    return (t: number): number => {
-      const idx = findSegmentIndex(points, t);
-      const p0 = points[idx];
-      const p1 = points[Math.min(idx + 1, points.length - 1)];
-      if (p0.t === p1.t) return p0.alt;
-      const frac = (t - p0.t) / (p1.t - p0.t);
-      return p0.alt + (p1.alt - p0.alt) * frac;
-    };
-  }, [points]);
-
   return {
     points,
     curve,
