@@ -1,3 +1,6 @@
 ## 2024-05-28 - Avoid 60fps garbage collection in useFrame when mapping standard arrays
 **Learning:** In Three.js applications, standard array methods like `.map(() => new THREE.Vector3(...p))` inside React hooks (like useMemo connected to throttled state) can still trigger thousands of GC allocations during high-speed playback, causing noticeable frame drops as the timeline speeds up.
 **Action:** Always pre-allocate module-level `THREE.Vector3` arrays matching the expected size, along with single module-level `_target` vectors for `getPoint()` methods, updating coordinates via `.set()` to completely eliminate GC spikes during rapid updates.
+## 2024-05-29 - Module-level Singletons over useMemo for Static Data
+**Learning:** Using `useMemo` inside custom hooks to cache expensive calculations derived from purely static data (like generating a `THREE.CatmullRomCurve3` from a constant trajectory array) results in redundant allocations and logic execution for every component instance that uses the hook.
+**Action:** Hoist these expensive calculations and static objects to module-level singletons (outside the hook or component scope). This ensures they are calculated only once upon module initialization and shared globally, improving memory usage and reducing React render overhead.
