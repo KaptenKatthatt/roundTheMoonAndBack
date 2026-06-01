@@ -27,10 +27,8 @@ const curve = (() => {
 const getPositionAt = (t: number, target?: THREE.Vector3): THREE.Vector3 => {
   const n = points.length;
   // Find bracketing waypoints for time t
-  let i = 0;
-  for (; i < n - 2; i++) {
-    if (points[i + 1].t >= t) break;
-  }
+  let i = findSegmentIndex(points, t);
+  if (i > n - 2) i = n - 2;
   // Fraction within this time segment
   const segDuration = points[i + 1].t - points[i].t;
   const f =
@@ -71,9 +69,21 @@ export function useTrajectory(): TrajectoryData {
   };
 }
 
+// ⚡ Bolt: Replaced O(n) linear search with O(log n) binary search to find the correct
+// trajectory segment faster, significantly reducing overhead for frequent interpolations.
 function findSegmentIndex(pts: SceneWaypoint[], t: number): number {
-  for (let i = 0; i < pts.length - 1; i++) {
-    if (pts[i + 1].t >= t) return i;
+  let low = 0;
+  let high = pts.length - 2;
+  let ans = pts.length - 1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (pts[mid + 1].t >= t) {
+      ans = mid;
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
   }
-  return pts.length - 1;
+  return ans;
 }

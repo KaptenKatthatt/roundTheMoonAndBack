@@ -4,3 +4,6 @@
 ## 2024-05-29 - Module-level Singletons over useMemo for Static Data
 **Learning:** Using `useMemo` inside custom hooks to cache expensive calculations derived from purely static data (like generating a `THREE.CatmullRomCurve3` from a constant trajectory array) results in redundant allocations and logic execution for every component instance that uses the hook.
 **Action:** Hoist these expensive calculations and static objects to module-level singletons (outside the hook or component scope). This ensures they are calculated only once upon module initialization and shared globally, improving memory usage and reducing React render overhead.
+## 2024-05-31 - Replace O(n) array searches with O(log n) binary search in high-frequency hooks
+**Learning:** In Three.js and React applications, calling linear search functions (e.g. searching through a large array of trajectory waypoints to find a bracketing segment) 60 times a second within `useFrame` or similar high-frequency hooks can cause measurable CPU overhead, especially as the array size grows.
+**Action:** Always replace `O(n)` linear scans with `O(log n)` binary searches when iterating over pre-sorted data (like chronological waypoints) that is frequently accessed during render loops.
