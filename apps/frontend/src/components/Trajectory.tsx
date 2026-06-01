@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Line } from "@react-three/drei";
 import * as THREE from "three";
 import { useTimeline } from "../hooks/useTimeline";
-import { getShiftedTrajectoryPositions } from "../data/trajectoryData";
+import { getShiftedTrajectoryPositions, TRAJECTORY } from "../data/trajectoryData";
 
 const THROTTLE_INTERVAL = 3_600_000; // Throttle to 1 simulated hour
 
@@ -19,8 +19,12 @@ export function Trajectory() {
 
   // ⚡ Bolt: Pre-allocate static curve and target vector to prevent ~535 THREE.Vector3
   // garbage collection allocations per update during high-speed playback
+  const outTargetPositions = useMemo(() => {
+    return TRAJECTORY.map((wp) => [...wp.p] as [number, number, number]);
+  }, [TRAJECTORY]);
+
   const linePoints = useMemo(() => {
-    const positions = getShiftedTrajectoryPositions(currentTime);
+    const positions = getShiftedTrajectoryPositions(currentTime, outTargetPositions);
 
     // Update vector coordinates in-place instead of instantiating new ones
     while (CACHED_VECTORS.length < positions.length) {

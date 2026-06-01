@@ -7,3 +7,6 @@
 ## 2024-05-31 - Replace O(n) array searches with O(log n) binary search in high-frequency hooks
 **Learning:** In Three.js and React applications, calling linear search functions (e.g. searching through a large array of trajectory waypoints to find a bracketing segment) 60 times a second within `useFrame` or similar high-frequency hooks can cause measurable CPU overhead, especially as the array size grows.
 **Action:** Always replace `O(n)` linear scans with `O(log n)` binary searches when iterating over pre-sorted data (like chronological waypoints) that is frequently accessed during render loops.
+## 2024-06-01 - Avoid Array.map for high-frequency coordinate updates
+**Learning:** Returning new array instances via `.map()` inside high-frequency hooks (even when throttled) causes significant garbage collection overhead during rapid playback scenarios, leading to frame drops as the timeline speeds up.
+**Action:** Always provide an optional `outTarget` parameter to data transformation functions that generate coordinates. Pass a persistent, pre-allocated array of tuples (`[number, number, number][]`) into this parameter so the function can mutate values in-place rather than instantiating new arrays.

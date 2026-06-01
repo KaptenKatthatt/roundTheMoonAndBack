@@ -110,8 +110,25 @@ for (let i = FLYBY_FIRST_IDX; i <= FLYBY_LAST_IDX; i++) {
  */
 export function getShiftedTrajectoryPositions(
   displayTime: number,
+  outTarget?: [number, number, number][]
 ): [number, number, number][] {
   const moonNow = getMoonScenePosition(displayTime);
+
+  // ⚡ Bolt: If outTarget is provided, we mutate it in-place to avoid GC allocations
+  if (outTarget) {
+    for (let i = FLYBY_FIRST_IDX; i <= FLYBY_LAST_IDX; i++) {
+      const wp = TRAJECTORY[i];
+      const fi = i - FLYBY_FIRST_IDX;
+      const blend = FLYBY_BLEND[fi];
+      const [mx, my, mz] = FLYBY_MOON_POS[fi];
+      outTarget[i][0] = wp.p[0] + (moonNow.x - mx) * blend;
+      outTarget[i][1] = wp.p[1] + (moonNow.y - my) * blend;
+      outTarget[i][2] = wp.p[2] + (moonNow.z - mz) * blend;
+    }
+    return outTarget;
+  }
+
+  // Fallback for simple calls without a mutable target
   return TRAJECTORY.map((wp, i) => {
     if (i < FLYBY_FIRST_IDX || i > FLYBY_LAST_IDX) return wp.p;
     const fi = i - FLYBY_FIRST_IDX;
