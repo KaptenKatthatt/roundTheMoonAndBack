@@ -23,6 +23,20 @@ moonRoute.get("/moon", async (c) => {
     return c.json({ error: "Invalid step format (e.g., 1h, 1d, 1m)" }, 400)
   }
 
+  // 🛡️ Sentinel: Enforce maximum date range (60 days) to prevent Upstream API DoS and OOM
+  const startDate = new Date(start)
+  const stopDate = new Date(stop)
+  if (isNaN(startDate.getTime()) || isNaN(stopDate.getTime())) {
+    return c.json({ error: "Invalid date value" }, 400)
+  }
+  if (stopDate <= startDate) {
+    return c.json({ error: "Stop date must be after start date" }, 400)
+  }
+  const diffDays = (stopDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+  if (diffDays > 60) {
+    return c.json({ error: "Date range exceeds maximum allowed (60 days)" }, 400)
+  }
+
   const cacheKey = `moon:${start}:${stop}:${step}`
   const cached = getCache<MoonResponse>(cacheKey)
   if (cached) return c.json(cached)
