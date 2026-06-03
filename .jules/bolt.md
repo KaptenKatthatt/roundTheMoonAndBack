@@ -10,3 +10,6 @@
 ## 2024-06-03 - Prevent array allocation during dynamic trajectory position mapping
 **Learning:** Returning a dynamically allocated array using `.map()` inside helper functions like `getShiftedTrajectoryPositions` triggered during active simulation components (like `<Trajectory>`) creates redundant array allocations, leading to heavy GC load and intermittent frame drops.
 **Action:** When computing updated coordinate arrays for React components, refactor helper functions to take a mutable `outTarget` parameter array. Pre-allocate a single module-level tuple array (e.g. `[number, number, number][]`) within the caller component and pass it in, iterating over and updating its values in-place instead of creating new arrays on each render cycle.
+## 2024-06-05 - Avoid returning inline objects in frequently called hooks
+**Learning:** Returning a newly allocated inline object literal from a custom hook (like `return { a, b, c }`) that is called by components frequently reacting to throttled state can create redundant allocations, leading to unnecessary GC overhead.
+**Action:** When a custom hook returns static references or stateless functions, hoist the returned object to a module-level constant (e.g. `const STATE = { a, b, c }; return STATE;`) to maintain strict referential equality and completely eliminate allocations.

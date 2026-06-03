@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import * as THREE from "three";
 import { TRAJECTORY } from "../data/trajectoryData";
 import type { SceneWaypoint } from "../data/trajectoryData";
@@ -58,15 +57,19 @@ const getAltitudeAt = (t: number): number => {
   return p0.alt + (p1.alt - p0.alt) * frac;
 };
 
+// ⚡ Bolt: Pre-allocate hook return object to avoid creating a new object literal
+// on every call (components calling this multiple times per second)
+const TRAJECTORY_STATE: TrajectoryData = {
+  points,
+  curve,
+  getPositionAt,
+  getVelocityAt,
+  getAltitudeAt,
+  loading: false,
+};
+
 export function useTrajectory(): TrajectoryData {
-  return {
-    points,
-    curve,
-    getPositionAt,
-    getVelocityAt,
-    getAltitudeAt,
-    loading: false,
-  };
+  return TRAJECTORY_STATE;
 }
 
 // ⚡ Bolt: Replaced O(n) linear search with O(log n) binary search to find the correct
