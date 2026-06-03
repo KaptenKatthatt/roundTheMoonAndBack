@@ -7,3 +7,6 @@
 ## 2024-05-31 - Replace O(n) array searches with O(log n) binary search in high-frequency hooks
 **Learning:** In Three.js and React applications, calling linear search functions (e.g. searching through a large array of trajectory waypoints to find a bracketing segment) 60 times a second within `useFrame` or similar high-frequency hooks can cause measurable CPU overhead, especially as the array size grows.
 **Action:** Always replace `O(n)` linear scans with `O(log n)` binary searches when iterating over pre-sorted data (like chronological waypoints) that is frequently accessed during render loops.
+## 2024-06-03 - Prevent array allocation during dynamic trajectory position mapping
+**Learning:** Returning a dynamically allocated array using `.map()` inside helper functions like `getShiftedTrajectoryPositions` triggered during active simulation components (like `<Trajectory>`) creates redundant array allocations, leading to heavy GC load and intermittent frame drops.
+**Action:** When computing updated coordinate arrays for React components, refactor helper functions to take a mutable `outTarget` parameter array. Pre-allocate a single module-level tuple array (e.g. `[number, number, number][]`) within the caller component and pass it in, iterating over and updating its values in-place instead of creating new arrays on each render cycle.

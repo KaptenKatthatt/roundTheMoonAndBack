@@ -110,17 +110,37 @@ for (let i = FLYBY_FIRST_IDX; i <= FLYBY_LAST_IDX; i++) {
  */
 export function getShiftedTrajectoryPositions(
   displayTime: number,
+  outTarget: [number, number, number][] = [],
 ): [number, number, number][] {
   const moonNow = getMoonScenePosition(displayTime);
-  return TRAJECTORY.map((wp, i) => {
-    if (i < FLYBY_FIRST_IDX || i > FLYBY_LAST_IDX) return wp.p;
+  for (let i = 0; i < TRAJECTORY.length; i++) {
+    const wp = TRAJECTORY[i];
+    if (i < FLYBY_FIRST_IDX || i > FLYBY_LAST_IDX) {
+      if (outTarget[i]) {
+        outTarget[i][0] = wp.p[0];
+        outTarget[i][1] = wp.p[1];
+        outTarget[i][2] = wp.p[2];
+      } else {
+        outTarget[i] = [wp.p[0], wp.p[1], wp.p[2]];
+      }
+      continue;
+    }
     const fi = i - FLYBY_FIRST_IDX;
     const blend = FLYBY_BLEND[fi];
     const [mx, my, mz] = FLYBY_MOON_POS[fi];
-    return [
-      wp.p[0] + (moonNow.x - mx) * blend,
-      wp.p[1] + (moonNow.y - my) * blend,
-      wp.p[2] + (moonNow.z - mz) * blend,
-    ] as [number, number, number];
-  });
+    const newX = wp.p[0] + (moonNow.x - mx) * blend;
+    const newY = wp.p[1] + (moonNow.y - my) * blend;
+    const newZ = wp.p[2] + (moonNow.z - mz) * blend;
+
+    if (outTarget[i]) {
+      outTarget[i][0] = newX;
+      outTarget[i][1] = newY;
+      outTarget[i][2] = newZ;
+    } else {
+      outTarget[i] = [newX, newY, newZ];
+    }
+  }
+  // Remove any extra elements if outTarget was longer than TRAJECTORY
+  outTarget.length = TRAJECTORY.length;
+  return outTarget;
 }

@@ -7,6 +7,7 @@ import { getShiftedTrajectoryPositions } from "../data/trajectoryData";
 const THROTTLE_INTERVAL = 3_600_000; // Throttle to 1 simulated hour
 
 const CACHED_VECTORS: THREE.Vector3[] = [];
+const CACHED_POSITIONS: [number, number, number][] = [];
 const SHARED_CURVE = new THREE.CatmullRomCurve3(CACHED_VECTORS, false, "catmullrom", 0.5);
 const _target = new THREE.Vector3();
 
@@ -20,7 +21,8 @@ export function Trajectory() {
   // ⚡ Bolt: Pre-allocate static curve and target vector to prevent ~535 THREE.Vector3
   // garbage collection allocations per update during high-speed playback
   const linePoints = useMemo(() => {
-    const positions = getShiftedTrajectoryPositions(currentTime);
+    // ⚡ Bolt: Pass module-level CACHED_POSITIONS to avoid mapping a new array every time
+    const positions = getShiftedTrajectoryPositions(currentTime, CACHED_POSITIONS);
 
     // Update vector coordinates in-place instead of instantiating new ones
     while (CACHED_VECTORS.length < positions.length) {
