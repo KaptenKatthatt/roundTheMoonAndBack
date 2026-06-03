@@ -23,6 +23,17 @@ moonRoute.get("/moon", async (c) => {
     return c.json({ error: "Invalid step format (e.g., 1h, 1d, 1m)" }, 400)
   }
 
+  const startDate = new Date(start).getTime()
+  const stopDate = new Date(stop).getTime()
+
+  // 🛡️ Sentinel: Enforce maximum date range (30 days) to prevent DoS memory exhaustion
+  if (stopDate <= startDate) {
+    return c.json({ error: "Stop date must be strictly after start date" }, 400)
+  }
+  if (stopDate - startDate > 30 * 24 * 60 * 60 * 1000) {
+    return c.json({ error: "Date range cannot exceed 30 days" }, 400)
+  }
+
   const cacheKey = `moon:${start}:${stop}:${step}`
   const cached = getCache<MoonResponse>(cacheKey)
   if (cached) return c.json(cached)
