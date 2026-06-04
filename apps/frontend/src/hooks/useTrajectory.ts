@@ -58,15 +58,19 @@ const getAltitudeAt = (t: number): number => {
   return p0.alt + (p1.alt - p0.alt) * frac;
 };
 
+// ⚡ Bolt: Hoisted the returned object literal to a module-level constant to prevent
+// Garbage Collection (GC) spikes and preserve referential equality when called frequently.
+const TRAJECTORY_DATA: TrajectoryData = {
+  points,
+  curve,
+  getPositionAt,
+  getVelocityAt,
+  getAltitudeAt,
+  loading: false,
+};
+
 export function useTrajectory(): TrajectoryData {
-  return {
-    points,
-    curve,
-    getPositionAt,
-    getVelocityAt,
-    getAltitudeAt,
-    loading: false,
-  };
+  return TRAJECTORY_DATA;
 }
 
 // ⚡ Bolt: Replaced O(n) linear search with O(log n) binary search to find the correct
