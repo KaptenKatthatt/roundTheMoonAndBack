@@ -58,15 +58,19 @@ const getAltitudeAt = (t: number): number => {
   return p0.alt + (p1.alt - p0.alt) * frac;
 };
 
+// ⚡ Bolt: Hoist the returned object from the hook to a module-level constant
+// to prevent GC spikes in React components that call this frequently.
+const TRAJECTORY_DATA: TrajectoryData = {
+  points,
+  curve,
+  getPositionAt,
+  getVelocityAt,
+  getAltitudeAt,
+  loading: false,
+};
+
 export function useTrajectory(): TrajectoryData {
-  return {
-    points,
-    curve,
-    getPositionAt,
-    getVelocityAt,
-    getAltitudeAt,
-    loading: false,
-  };
+  return TRAJECTORY_DATA;
 }
 
 // ⚡ Bolt: Replaced O(n) linear search with O(log n) binary search to find the correct

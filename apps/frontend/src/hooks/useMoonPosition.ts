@@ -1,4 +1,3 @@
-import { useCallback } from "react"
 import * as THREE from "three"
 import { getMoonScenePosition } from "../data/moonOrbit"
 
@@ -7,10 +6,13 @@ interface MoonPositionData {
   loading: boolean
 }
 
-export function useMoonPosition(): MoonPositionData {
-  const getPositionAt = useCallback((t: number, target?: THREE.Vector3): THREE.Vector3 => {
-    return getMoonScenePosition(t, target)
-  }, [])
+// ⚡ Bolt: Hoist the returned object from the hook to a module-level constant
+// to prevent GC spikes in React components that call this frequently.
+const MOON_POSITION_DATA: MoonPositionData = {
+  getPositionAt: getMoonScenePosition,
+  loading: false,
+};
 
-  return { getPositionAt, loading: false }
+export function useMoonPosition(): MoonPositionData {
+  return MOON_POSITION_DATA;
 }
