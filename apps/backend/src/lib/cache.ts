@@ -19,8 +19,12 @@ const MAX_CACHE_SIZE = 1000
 
 export function setCache<T>(key: string, data: T, ttlMs: number): void {
   if (store.size >= MAX_CACHE_SIZE) {
-    // Basic eviction strategy to prevent memory leak
-    store.clear()
+    // 🛡️ Sentinel: Use FIFO eviction strategy (deleting oldest entry)
+    // instead of store.clear() to prevent DoS via cache thrashing
+    const oldestKey = store.keys().next().value;
+    if (oldestKey !== undefined) {
+      store.delete(oldestKey);
+    }
   }
   store.set(key, { data, expires: Date.now() + ttlMs })
 }
