@@ -6,9 +6,6 @@ import { getShiftedTrajectoryPositions } from "../data/trajectoryData";
 
 const THROTTLE_INTERVAL = 3_600_000; // Throttle to 1 simulated hour
 
-const CACHED_VECTORS: THREE.Vector3[] = [];
-const CACHED_POSITIONS: [number, number, number][] = [];
-const SHARED_CURVE = new THREE.CatmullRomCurve3(CACHED_VECTORS, false, "catmullrom", 0.5);
 const _target = new THREE.Vector3();
 
 export function Trajectory() {
@@ -18,32 +15,46 @@ export function Trajectory() {
     Math.floor(s.currentTime / THROTTLE_INTERVAL) * THROTTLE_INTERVAL
   );
 
+  // ⚡ Bolt: Initialize instance-level mutable caches inside a useMemo hook with
+  // an empty dependency array to avoid pure-render violations with module-level globals
+  const { cachedPositions, cachedVectors, sharedCurve, pointsArray } = useMemo(() => {
+    return {
+      cachedPositions: [] as [number, number, number][],
+      cachedVectors: [] as THREE.Vector3[],
+      sharedCurve: new THREE.CatmullRomCurve3([], false, "catmullrom", 0.5),
+      pointsArray: Array.from({ length: 501 }, () => [0, 0, 0] as [number, number, number])
+    };
+  }, []);
+
   // ⚡ Bolt: Pre-allocate static curve and target vector to prevent ~535 THREE.Vector3
   // garbage collection allocations per update during high-speed playback
   const linePoints = useMemo(() => {
-    // ⚡ Bolt: Pass module-level CACHED_POSITIONS to avoid mapping a new array every time
-    const positions = getShiftedTrajectoryPositions(currentTime, CACHED_POSITIONS);
+    // ⚡ Bolt: Pass instance-level cachedPositions to avoid mapping a new array every time
+    const positions = getShiftedTrajectoryPositions(currentTime, cachedPositions);
 
     // Update vector coordinates in-place instead of instantiating new ones
-    while (CACHED_VECTORS.length < positions.length) {
-      CACHED_VECTORS.push(new THREE.Vector3());
+    while (cachedVectors.length < positions.length) {
+      cachedVectors.push(new THREE.Vector3());
     }
     // If positions is smaller, only update up to positions.length and update the curve's points reference
-    SHARED_CURVE.points = CACHED_VECTORS.slice(0, positions.length);
+    sharedCurve.points = cachedVectors.slice(0, positions.length);
 
     for (let i = 0; i < positions.length; i++) {
-      SHARED_CURVE.points[i].set(positions[i][0], positions[i][1], positions[i][2]);
+      sharedCurve.points[i].set(positions[i][0], positions[i][1], positions[i][2]);
     }
 
     // Sample points reusing a single target vector
-    const pointsArray: [number, number, number][] = new Array(501);
     for (let i = 0; i <= 500; i++) {
-      SHARED_CURVE.getPoint(i / 500, _target);
-      pointsArray[i] = [_target.x, _target.y, _target.z];
+      sharedCurve.getPoint(i / 500, _target);
+      pointsArray[i][0] = _target.x;
+      pointsArray[i][1] = _target.y;
+      pointsArray[i][2] = _target.z;
     }
 
-    return pointsArray;
-  }, [currentTime]);
+    // Return a shallow copy so React detects the array change for Drei's Line,
+    // while still saving 501 tuple allocations per render.
+    return [...pointsArray];
+  }, [currentTime, cachedPositions, cachedVectors, sharedCurve, pointsArray]);
 
   if (linePoints.length < 2) return null;
 

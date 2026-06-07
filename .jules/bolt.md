@@ -13,3 +13,6 @@
 ## 2026-06-05 - Prevent GC spikes in custom hooks by hoisting returned static object literals
 **Learning:** Returning inline object literals from React custom hooks (e.g., `return { getPositionAt, loading: false }`) creates a new object reference on every render, causing garbage collection spikes in consuming components that run at 60fps or use the hook in dependency arrays.
 **Action:** Hoist the returned object from custom hooks to a module-level constant when its values are static functions or constants, ensuring referential equality and preventing unnecessary allocations and downstream re-renders.
+## 2026-06-07 - Pre-allocate inner arrays to prevent GC spikes
+**Learning:** Instantiating new inner arrays per render tick inside `useMemo` hooks (e.g. recreating 501 `[x,y,z]` tuples) can cause significant garbage collection overhead, even if the outer array allocation is avoided, especially when dealing with rapidly updating `@react-three/drei` Line components.
+**Action:** When a static sized outer array requires inner mutable elements, initialize them with dummy data in an empty dependency `useMemo` hook, then iterate and mutate those inner arrays in-place in subsequent hook calls before returning a shallow copy of the outer array.
