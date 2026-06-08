@@ -15,7 +15,8 @@ moonRoute.get("/moon", async (c) => {
   // Input validation
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/
   // 🛡️ Sentinel: Restrict step length to mitigate DoS via large inputs
-  const stepRegex = /^\d{1,4}[hmd]$/
+  // Prevent zero values (e.g., 0h) that would cause infinite loops or be rejected by the external API
+  const stepRegex = /^[1-9]\d{0,3}[hmd]$/
   if (!dateRegex.test(start) || !dateRegex.test(stop)) {
     return c.json({ error: "Invalid start or stop date format (expected YYYY-MM-DD)" }, 400)
   }
