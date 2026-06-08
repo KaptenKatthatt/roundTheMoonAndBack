@@ -13,3 +13,9 @@
 ## 2026-06-05 - Prevent GC spikes in custom hooks by hoisting returned static object literals
 **Learning:** Returning inline object literals from React custom hooks (e.g., `return { getPositionAt, loading: false }`) creates a new object reference on every render, causing garbage collection spikes in consuming components that run at 60fps or use the hook in dependency arrays.
 **Action:** Hoist the returned object from custom hooks to a module-level constant when its values are static functions or constants, ensuring referential equality and preventing unnecessary allocations and downstream re-renders.
+## 2024-06-08 - Use instance-level mutable caches instead of module-level globals in React
+**Learning:** Mutating module-level global arrays inside a React component's render phase or `useMemo` hooks violates React's pure-render principles, breaks safely under React Strict Mode, and can cause state-corruption bugs if components are reused.
+**Action:** To avoid React pure-render violations when pre-allocating mutable arrays for high-frequency updates, initialize instance-level mutable caches (e.g., coordinate tuples, Three.js objects) inside a `useMemo` hook with an empty dependency array (`[]`), rather than using module-level global variables.
+## 2024-06-08 - Use instance-level mutable caches instead of module-level globals in React
+**Learning:** Mutating module-level global arrays inside a React component's render phase or `useMemo` hooks violates React's pure-render principles, breaks safely under React Strict Mode, and can cause state-corruption bugs if components are reused.
+**Action:** To avoid React pure-render violations when pre-allocating mutable arrays for high-frequency updates, initialize instance-level mutable caches (e.g., coordinate tuples, Three.js objects) inside a `useMemo` hook with an empty dependency array (`[]`), rather than using module-level global variables.
