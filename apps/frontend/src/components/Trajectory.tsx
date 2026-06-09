@@ -15,12 +15,18 @@ export function Trajectory() {
 
   // ⚡ Bolt: Initialize instance-level mutable caches to avoid React pure-render violations
   // and prevent state-corruption bugs if components are reused.
-  const cache = useMemo(() => ({
-    vectors: [] as THREE.Vector3[],
-    positions: [] as [number, number, number][],
-    curve: new THREE.CatmullRomCurve3([], false, "catmullrom", 0.5),
-    target: new THREE.Vector3()
-  }), []);
+  const cache = useMemo(() => {
+    const tuples: [number, number, number][] = new Array(501);
+    for (let i = 0; i <= 500; i++) tuples[i] = [0, 0, 0];
+
+    return {
+      vectors: [] as THREE.Vector3[],
+      positions: [] as [number, number, number][],
+      tuples,
+      curve: new THREE.CatmullRomCurve3([], false, "catmullrom", 0.5),
+      target: new THREE.Vector3()
+    };
+  }, []);
 
   // ⚡ Bolt: Pre-allocate static curve and target vector to prevent ~535 THREE.Vector3
   // garbage collection allocations per update during high-speed playback
@@ -39,11 +45,15 @@ export function Trajectory() {
       cache.curve.points[i].set(positions[i][0], positions[i][1], positions[i][2]);
     }
 
-    // Sample points reusing a single target vector
+    // ⚡ Bolt: Return a shallow copy of the outer array to preserve React referential equality,
+    // but reuse the inner tuple references and mutate them to avoid 501 inner array allocations per update
     const pointsArray: [number, number, number][] = new Array(501);
     for (let i = 0; i <= 500; i++) {
       cache.curve.getPoint(i / 500, cache.target);
-      pointsArray[i] = [cache.target.x, cache.target.y, cache.target.z];
+      cache.tuples[i][0] = cache.target.x;
+      cache.tuples[i][1] = cache.target.y;
+      cache.tuples[i][2] = cache.target.z;
+      pointsArray[i] = cache.tuples[i];
     }
 
     return pointsArray;
