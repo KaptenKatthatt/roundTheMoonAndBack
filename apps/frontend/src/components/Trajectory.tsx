@@ -18,6 +18,7 @@ export function Trajectory() {
   const cache = useMemo(() => ({
     vectors: [] as THREE.Vector3[],
     positions: [] as [number, number, number][],
+    pointTuples: [] as [number, number, number][],
     curve: new THREE.CatmullRomCurve3([], false, "catmullrom", 0.5),
     target: new THREE.Vector3()
   }), []);
@@ -40,10 +41,21 @@ export function Trajectory() {
     }
 
     // Sample points reusing a single target vector
+    // ⚡ Bolt: Mutate inner tuples in-place instead of creating new [x, y, z] arrays
+    // on every iteration to prevent GC spikes, returning a new outer array reference
     const pointsArray: [number, number, number][] = new Array(501);
     for (let i = 0; i <= 500; i++) {
       cache.curve.getPoint(i / 500, cache.target);
-      pointsArray[i] = [cache.target.x, cache.target.y, cache.target.z];
+
+      if (!cache.pointTuples[i]) {
+        cache.pointTuples[i] = [cache.target.x, cache.target.y, cache.target.z];
+      } else {
+        cache.pointTuples[i][0] = cache.target.x;
+        cache.pointTuples[i][1] = cache.target.y;
+        cache.pointTuples[i][2] = cache.target.z;
+      }
+
+      pointsArray[i] = cache.pointTuples[i];
     }
 
     return pointsArray;
