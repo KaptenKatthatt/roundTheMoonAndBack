@@ -19,3 +19,6 @@
 ## 2024-06-08 - Use instance-level mutable caches instead of module-level globals in React
 **Learning:** Mutating module-level global arrays inside a React component's render phase or `useMemo` hooks violates React's pure-render principles, breaks safely under React Strict Mode, and can cause state-corruption bugs if components are reused.
 **Action:** To avoid React pure-render violations when pre-allocating mutable arrays for high-frequency updates, initialize instance-level mutable caches (e.g., coordinate tuples, Three.js objects) inside a `useMemo` hook with an empty dependency array (`[]`), rather than using module-level global variables.
+## 2024-06-09 - Avoid recreating small arrays in high-frequency React hooks
+**Learning:** Returning a newly created tuple array (e.g., `[x, y, z]`) on every iteration inside a loop triggered by high-frequency updates generates significant garbage collection overhead, even when passed into a newly allocated outer array meant to trigger React re-renders.
+**Action:** Pre-allocate inner tuples in an instance-level `useMemo` cache and mutate their values in-place during iterations. Then, assign these mutated tuples to the newly allocated outer array to maintain React referential equality for re-renders while eliminating redundant inner array allocations.
