@@ -19,7 +19,8 @@ export function Trajectory() {
     vectors: [] as THREE.Vector3[],
     positions: [] as [number, number, number][],
     curve: new THREE.CatmullRomCurve3([], false, "catmullrom", 0.5),
-    target: new THREE.Vector3()
+    target: new THREE.Vector3(),
+    linePointsInner: Array.from({ length: 501 }, () => [0, 0, 0] as [number, number, number])
   }), []);
 
   // ⚡ Bolt: Pre-allocate static curve and target vector to prevent ~535 THREE.Vector3
@@ -39,11 +40,16 @@ export function Trajectory() {
       cache.curve.points[i].set(positions[i][0], positions[i][1], positions[i][2]);
     }
 
-    // Sample points reusing a single target vector
+    // ⚡ Bolt: Sample points reusing pre-allocated inner tuples to prevent inner tuple allocations
+    // while returning a new outer array to trigger React re-renders for the Line component.
     const pointsArray: [number, number, number][] = new Array(501);
     for (let i = 0; i <= 500; i++) {
       cache.curve.getPoint(i / 500, cache.target);
-      pointsArray[i] = [cache.target.x, cache.target.y, cache.target.z];
+      const tuple = cache.linePointsInner[i];
+      tuple[0] = cache.target.x;
+      tuple[1] = cache.target.y;
+      tuple[2] = cache.target.z;
+      pointsArray[i] = tuple;
     }
 
     return pointsArray;
