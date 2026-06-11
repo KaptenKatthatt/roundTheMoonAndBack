@@ -1,8 +1,4 @@
-## 2025-06-01 - Update Hono dependency to fix CSS Injection and Cache leakage vulnerabilities
-**Vulnerability:** The 'hono' dependency in the backend had moderate security vulnerabilities including CSS Declaration Injection via Style Object Values in JSX SSR, Cache Middleware cross-user cache leakage, bodyLimit bypass, and HTML Injection vulnerabilities.
-**Learning:** These vulnerabilities exist in older versions of 'hono' (<4.12.18).
-**Prevention:** Regularly audit packages, including in sub-workspaces, using `pnpm audit` and keep dependencies up to date.
-## 2025-06-04 - Fix DoS vulnerability via unbounded date range in Horizons API
-**Vulnerability:** The `/api/moon` endpoint allowed unbounded date ranges, creating a resource exhaustion (DoS) vulnerability via the external NASA Horizons API and our backend cache.
-**Learning:** Endpoints that accept date ranges for data fetching must strictly validate logical order (start <= stop) and enforce reasonable maximum limits (e.g. 30 days) to prevent abuse.
-**Prevention:** Implement bounds checking on all date range parameters, calculate the duration in days, and return 400 Bad Request if bounds are exceeded, prior to expensive operations.
+## 2024-06-11 - [Input Validation] Prevent DoS bypass with NaN Dates
+**Vulnerability:** The `/api/moon` endpoint was vulnerable to a resource exhaustion DoS. While logical bounds checked for duration, an invalid date string (e.g. "9999-99-99") caused `Date.getTime()` to be `NaN`. Comparisons with `NaN` silently bypass greater-than/less-than operators, allowing huge workloads downstream.
+**Learning:** Checking string structure is not enough; explicit type and bound checks must happen post-parsing when numeric values (like `getTime()`) are expected, especially for boundary validation logic.
+**Prevention:** Explicitly validate parsed numbers for `isNaN()` before they are evaluated in structural constraints (like `startDate >= stopDate` or duration checks).

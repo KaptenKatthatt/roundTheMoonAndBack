@@ -26,6 +26,12 @@ moonRoute.get("/moon", async (c) => {
   // 🛡️ Sentinel: Enforce logical date ranges and maximum duration to prevent DoS via resource exhaustion
   const startDate = new Date(start)
   const stopDate = new Date(stop)
+
+  // 🛡️ Sentinel: Prevent invalid date DoS bypass by explicitly checking for NaN
+  if (isNaN(startDate.getTime()) || isNaN(stopDate.getTime())) {
+    return c.json({ error: "Invalid date value" }, 400)
+  }
+
   if (startDate >= stopDate) {
     return c.json({ error: "Start date must be before stop date" }, 400)
   }
