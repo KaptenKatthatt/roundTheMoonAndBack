@@ -1,8 +1,14 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useTexture, Sphere } from "@react-three/drei";
+import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { Mesh } from "three";
+
+// ⚡ Bolt: Pre-allocate a single base sphere geometry and reuse it across all
+// Earth layers with different scales. This prevents creating 4 distinct
+// SphereGeometries with 64x64 segments (16,384 vertices each), saving memory
+// and speeding up instantiation.
+const sharedEarthGeometry = new THREE.SphereGeometry(1, 64, 64);
 
 export function Earth() {
   const cloudRef = useRef<Mesh>(null);
@@ -21,7 +27,7 @@ export function Earth() {
   return (
     <group>
       {/* Earth surface */}
-      <Sphere args={[1, 64, 64]} renderOrder={0}>
+      <mesh geometry={sharedEarthGeometry} scale={1} renderOrder={0}>
         <meshStandardMaterial
           map={dayMap}
           metalness={0.1}
@@ -29,10 +35,10 @@ export function Earth() {
           emissive="#000510"
           emissiveIntensity={0.3}
         />
-      </Sphere>
+      </mesh>
 
       {/* Cloud layer */}
-      <Sphere ref={cloudRef} args={[1.005, 64, 64]} renderOrder={1}>
+      <mesh ref={cloudRef} geometry={sharedEarthGeometry} scale={1.005} renderOrder={1}>
         <meshStandardMaterial
           map={cloudMap}
           transparent
@@ -40,10 +46,10 @@ export function Earth() {
           depthWrite={false}
           depthTest={true}
         />
-      </Sphere>
+      </mesh>
 
       {/* Inner atmosphere — tight crisp rim */}
-      <Sphere args={[1.015, 64, 64]} renderOrder={2}>
+      <mesh geometry={sharedEarthGeometry} scale={1.015} renderOrder={2}>
         <meshBasicMaterial
           color="#4da6ff"
           transparent
@@ -53,10 +59,10 @@ export function Earth() {
           depthWrite={false}
           depthTest={true}
         />
-      </Sphere>
+      </mesh>
 
       {/* Outer atmosphere — soft wide halo */}
-      <Sphere args={[1.04, 64, 64]} renderOrder={3}>
+      <mesh geometry={sharedEarthGeometry} scale={1.04} renderOrder={3}>
         <meshBasicMaterial
           color="#3a8fd4"
           transparent
@@ -66,7 +72,7 @@ export function Earth() {
           depthWrite={false}
           depthTest={true}
         />
-      </Sphere>
+      </mesh>
     </group>
   );
 }
